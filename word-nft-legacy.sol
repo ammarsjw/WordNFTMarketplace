@@ -1466,7 +1466,7 @@ contract WordNFTMarketplace is Ownable {
     constructor() {
         // marketplaceNFTWallet = payable(0x49A61ba8E25FBd58cE9B30E1276c4Eb41dD80a80);
         // marketplaceRoyaltyWallet = payable(0x0000000000000000000000000000000000000000);
-        marketplaceFeeWallet = payable(0x0000000000000000000000000000000000000000);
+        marketplaceFeeWallet = payable(0x0000000000000000000000000000000000000000); // TODO
 
         marketplacePercentage = 50;
         minterPercentage = 50;
@@ -1505,6 +1505,8 @@ contract WordNFTMarketplace is Ownable {
         uint256 currentHighestBid = tokenIdForCurrentBid[_tokenId].currentBidAmount;
         if (currentHighestBid == 0) {
             currentHighestBid = startingBid;
+            tokenIdForAllBids[_tokenId][lengthForAllBids[_tokenId]] = Bid(payable(0x0), 0.01 ether);
+            lengthForAllBids[_tokenId]++;
         }
         require(_newBid > currentHighestBid.add(currentHighestBid.mul(minimumBidIncreasePercentage).div(100)), "bid::Bid must be higher than 1% of current highest bid");
         (address payable tempMinter, uint256 tempMintTime, uint256 tempExpiryTime) = wordNFT.getWordInfo(_tokenId);
@@ -1515,7 +1517,7 @@ contract WordNFTMarketplace is Ownable {
 
 
         tokenIdForAllBids[_tokenId][lengthForAllBids[_tokenId]] = Bid(payable(msg.sender), _newBid);
-        lengthForAllBids[_tokenId] += 1;
+        lengthForAllBids[_tokenId]++;
         tokenIdForCurrentBid[_tokenId] = CurrentBid(payable(msg.sender), _newBid);
 
         tempExpiryTime += bumpBidExpiryTime;
@@ -1524,10 +1526,23 @@ contract WordNFTMarketplace is Ownable {
         emit BidMade(msg.sender, _newBid, _tokenId);
     }
 
-    // function cancelBid(uint256 _tokenId) external {
-    //     (address payable tempMinter, uint256 tempMintTime, uint256 tempExpiryTime) = wordNFT.getWordInfo(_tokenId);
-    //     require(block.timestamp <= tempExpiryTime, "bid::Bidding time for this NFT has expired");
-    // }
+    function cancelBid(address _bidder, uint256 _bidAmount, uint256 _tokenId) external {
+        (, , uint256 tempExpiryTime) = wordNFT.getWordInfo(_tokenId);
+        require(block.timestamp <= tempExpiryTime, "bid::Bidding time for this NFT has expired");
+
+        address payable tempBidder = tokenIdForAllBids[_tokenId][lengthForAllBids[_tokenId]].bidder;
+        uint256 tempBidAmount = tokenIdForAllBids[_tokenId][lengthForAllBids[_tokenId]].bidAmount;
+
+        sendValue(tempBidder, tempBidAmount);
+        
+        for (uint256 i = 0 ; i < lengthForAllBids[_tokenId] ; i++) {
+            if (tokenIdForAllBids[_tokenId][i].bidder == _bidder && tokenIdForAllBids[_tokenId][i].bidAmount == _bidAmount) {
+                tokenIdForAllBids[_tokenId][i] = Bid(payable(0x0), 0 ether);
+            }
+        }
+
+        emit BidCancelled(tempBidder, tempBidAmount, _tokenId);
+    }
 
     function claim(uint256 _tokenId) external payable {
         (address payable tempMinter, , uint256 tempExpiryTime) = wordNFT.getWordInfo(_tokenId);
@@ -1558,10 +1573,12 @@ contract WordNFTMarketplace is Ownable {
     
     receive() external payable {}
 
+    // TODO WETH for bidding
     // TODO store previous bids
     // TODO cancelBid structure and logic to be confirmed and then deployed
+    
+    // TODO how to check when expiry time has been reached to execute functions or events
     // TODO transfer to OpenSea on expiry if no bid has been made
     // TODO transfer to OpenSea once claimed
-    // TODO WETH for bidding
     // function transferOnExpiry();
 }
