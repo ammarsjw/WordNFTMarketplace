@@ -5,6 +5,7 @@
 // OpenZeppelin Contracts v4.4.1 (utils/Strings.sol)
 
 pragma solidity ^0.8.0;
+// SPDX-License-Identifier: Unlicense
 
 /**
  * @dev String operations.
@@ -1543,6 +1544,11 @@ abstract contract Ownable is Context {
 pragma solidity ^0.8.0;
 
 
+interface IWordNFTMarketplace {
+    function setOnAuction(address payable _minter, uint256 _tokenId) external;
+}
+
+
 contract WordsNFT is ERC721Enumerable, Ownable {
     using SafeMath for uint256;
     using Strings for uint256;
@@ -1552,6 +1558,7 @@ contract WordsNFT is ERC721Enumerable, Ownable {
 
     mapping (string => bool) existingNames;
     address payable public marketplaceContractAddress;
+    IWordNFTMarketplace public marketplaceContract;
 
     bool marketplaceActive;
 
@@ -1635,6 +1642,7 @@ contract WordsNFT is ERC721Enumerable, Ownable {
             require(marketplaceContractAddress != address(0), "Set marketplace contract address before minting");
             _safeMint(marketplaceContractAddress, mintIndex);
             _setTokenURI(mintIndex, uri);
+            marketplaceContract.setOnAuction(payable(recipient), mintIndex);
             emit Mint(recipient, mintIndex, marketplaceContractAddress, word, uri);
         }
         else{
@@ -1685,6 +1693,7 @@ contract WordsNFT is ERC721Enumerable, Ownable {
 
     function setMarketplaceContractAddress(address payable _address) public onlyOwner {
         marketplaceContractAddress = _address;
+        marketplaceContract = IWordNFTMarketplace(_address);
         emit SetMarketplaceContractAddress(_address);
     }
 
