@@ -1,0 +1,63 @@
+type Transaction @entity {
+  id: ID!
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  blockHash: Bytes!
+  from: Bytes!
+  to: Bytes
+  value: BigInt!
+  gasPrice: BigInt!
+}
+
+type Approval @entity {
+  id: ID!
+  transaction: Transaction!
+  owner: Bytes!
+  approved: Bytes!
+  tokenId: BigInt!
+}
+
+type ApprovalForAll @entity {
+  id: ID!
+  transaction: Transaction!
+  owner: Bytes!
+  operator: Bytes!
+  approved: Boolean!
+}
+
+type Mint @entity {
+  id: ID!
+  transaction: Transaction!
+  minter: Bytes!
+  tokenId: BigInt!
+  mintedTo: Bytes!
+  word: String!
+  uri: String!
+}
+
+type OwnershipTransferred @entity {
+  id: ID!
+  transaction: Transaction!
+  previousOwner: Bytes!
+  newOwner: Bytes!
+}
+
+type SetMarketplaceActive @entity {
+  id: ID!
+  transaction: Transaction!
+  status: Boolean!
+}
+
+type SetMarketplaceContractAddress @entity {
+  id: ID!
+  transaction: Transaction!
+  contractAddress: Bytes!
+}
+
+type Transfer @entity {
+  id: ID!
+  transaction: Transaction!
+  from: Bytes!
+  to: Bytes!
+  tokenId: BigInt!
+}
