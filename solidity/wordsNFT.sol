@@ -1545,7 +1545,9 @@ pragma solidity ^0.8.0;
 
 
 interface IWordNFTMarketplace {
+
     function setOnAuction(address payable _minter, uint256 _tokenId) external;
+
 }
 
 
@@ -1561,6 +1563,9 @@ contract WordsNFT is ERC721Enumerable, Ownable {
     IWordNFTMarketplace public marketplaceContract;
 
     bool marketplaceActive;
+
+    address payable tempMinter;
+    uint256 tempTokenId;
 
     event Mint(
         address indexed minter,
@@ -1640,13 +1645,13 @@ contract WordsNFT is ERC721Enumerable, Ownable {
         
         if(marketplaceActive){
             require(marketplaceContractAddress != address(0), "Set marketplace contract address before minting");
-            _safeMint(marketplaceContractAddress, mintIndex);
+            _mint(marketplaceContractAddress, mintIndex);
             _setTokenURI(mintIndex, uri);
             marketplaceContract.setOnAuction(payable(recipient), mintIndex);
             emit Mint(recipient, mintIndex, marketplaceContractAddress, word, uri);
         }
         else{
-            _safeMint(recipient, mintIndex);
+            _mint(recipient, mintIndex);
             _setTokenURI(mintIndex, uri);
             emit Mint(recipient, mintIndex, recipient, word, uri);
         }
@@ -1702,5 +1707,4 @@ contract WordsNFT is ERC721Enumerable, Ownable {
         emit SetMarketplaceActive(marketplaceActive);
         return marketplaceActive;
     }
-
 }
