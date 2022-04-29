@@ -1,4 +1,94 @@
 
+// File: https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC20/IERC20.sol
+
+
+// OpenZeppelin Contracts (last updated v4.6.0) (token/ERC20/IERC20.sol)
+
+pragma solidity ^0.8.0;
+
+// SPDX-License-Identifier: Unlicense
+
+/**
+ * @dev Interface of the ERC20 standard as defined in the EIP.
+ */
+interface IERC20 {
+    /**
+     * @dev Emitted when `value` tokens are moved from one account (`from`) to
+     * another (`to`).
+     *
+     * Note that `value` may be zero.
+     */
+    event Transfer(address indexed from, address indexed to, uint256 value);
+
+    /**
+     * @dev Emitted when the allowance of a `spender` for an `owner` is set by
+     * a call to {approve}. `value` is the new allowance.
+     */
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+
+    /**
+     * @dev Returns the amount of tokens in existence.
+     */
+    function totalSupply() external view returns (uint256);
+
+    /**
+     * @dev Returns the amount of tokens owned by `account`.
+     */
+    function balanceOf(address account) external view returns (uint256);
+
+    /**
+     * @dev Moves `amount` tokens from the caller's account to `to`.
+     *
+     * Returns a boolean value indicating whether the operation succeeded.
+     *
+     * Emits a {Transfer} event.
+     */
+    function transfer(address to, uint256 amount) external returns (bool);
+
+    /**
+     * @dev Returns the remaining number of tokens that `spender` will be
+     * allowed to spend on behalf of `owner` through {transferFrom}. This is
+     * zero by default.
+     *
+     * This value changes when {approve} or {transferFrom} are called.
+     */
+    function allowance(address owner, address spender) external view returns (uint256);
+
+    /**
+     * @dev Sets `amount` as the allowance of `spender` over the caller's tokens.
+     *
+     * Returns a boolean value indicating whether the operation succeeded.
+     *
+     * IMPORTANT: Beware that changing an allowance with this method brings the risk
+     * that someone may use both the old and the new allowance by unfortunate
+     * transaction ordering. One possible solution to mitigate this race
+     * condition is to first reduce the spender's allowance to 0 and set the
+     * desired value afterwards:
+     * https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
+     *
+     * Emits an {Approval} event.
+     */
+    function approve(address spender, uint256 amount) external returns (bool);
+
+    /**
+     * @dev Moves `amount` tokens from `from` to `to` using the
+     * allowance mechanism. `amount` is then deducted from the caller's
+     * allowance.
+     *
+     * Returns a boolean value indicating whether the operation succeeded.
+     *
+     * Emits a {Transfer} event.
+     */
+    function transferFrom(
+        address from,
+        address to,
+        uint256 amount
+    ) external returns (bool);
+}
+
+// File: WordsNFTMarketplace.sol
+
+
 // File: https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/utils/Context.sol
 
 
@@ -6,7 +96,7 @@
 
 pragma solidity ^0.8.0;
 
-// SPDX-License-Identifier: Unlicense
+
 
 /**
  * @dev Provides information about the current execution context, including the
@@ -593,6 +683,8 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver {
     mapping(uint256 => uint256) public lengthForAllBids;
     mapping(uint256 => CurrentBid) public tokenIdForCurrentBid;
 
+    IERC20 WETH;
+
     IWordsNFT wordsNFT;
 
     // Events
@@ -634,6 +726,11 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver {
         uint256 _tokenId
     );
 
+    event ClaimedAndNoBidsMade (
+        address indexed _minter,
+        uint256 _tokenId
+    );
+
     event ERC721Received (
         address indexed _operator,
         address indexed _to,
@@ -652,14 +749,17 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver {
         minimumBidIncreasePercentage = 1;
         
         startingBid = 0.01 ether;
-        bidExpiryTime = 24 hours;
-        // bidExpiryTime = 2 minutes;
-        bumpBidExpiryTime = 10 minutes;
+        // bidExpiryTime = 24 hours;
+        bidExpiryTime = 2 minutes;
+        bumpBidExpiryTime = 1 minutes;
+
+        WETH = IERC20(0xc778417E063141139Fce010982780140Aa0cD5Ab); //Testnet
+        // WETH = IERC20(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2); //Mainnet
     }
 
     // setters
 
-    function setWordsNFTAddress(address _originContract) public onlyOwner {
+    function setWordsNFTContractAddress(address _originContract) public onlyOwner {
         wordsNFT = IWordsNFT(_originContract);
 
         emit ChangedWordsNFTAddress(address(wordsNFT));
@@ -669,6 +769,10 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver {
         marketplaceFeeWallet = _marketplaceFeeWallet;
 
         emit ChangedMarketplaceFeeWallet(_marketplaceFeeWallet);
+    }
+
+    function setWETH(address _stablecoinContractAddress) public onlyOwner {
+        WETH = IERC20(_stablecoinContractAddress);
     }
 
     function setFeePercentages(uint8 _marketplacePercentage) external onlyOwner {
@@ -686,7 +790,7 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver {
 
     // getters
 
-    function getWordsNFTAddress() public view onlyOwner returns(address) {
+    function getWordsNFTContractAddress() public view onlyOwner returns(address) {
         return address(wordsNFT);
     }
 
@@ -709,6 +813,7 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver {
 
     function bid(uint256 _newBid, uint256 _tokenId) external payable {
         // (address payable tempMinter, uint256 tempMintTime, uint256 tempExpiryTime) = wordsNFT.getWordInfo(_tokenId);
+        uint256 sentValue = WETH.allowance(msg.sender, address(this));
         WordInfo memory tempWordInfo = tokenIdForWordInfo[_tokenId];
         uint256 currentHighestBid = tokenIdForCurrentBid[_tokenId].currentBidAmount;
         
@@ -720,8 +825,8 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver {
         }
         require(_newBid > currentHighestBid.add(currentHighestBid.mul(minimumBidIncreasePercentage).div(100)), "bid::Bid must be higher than 1% of current highest bid");
         require(msg.sender != tempWordInfo.minter, "bid::Minter cannot bid");
-        require(msg.value != 0, "bid::Value sent must not be 0 Wei");
-        require(msg.value >= _newBid, "bid::Value sent must be greater than or equal to the bid amount");
+        require(sentValue != 0, "bid::Approved WETH must not be 0 Wei or Approval must be given");
+        require(sentValue >= _newBid, "bid::Approved WETH must be greater than or equal to the bid amount");
         // require(block.timestamp <= tempExpiryTime, "bid::Bidding time for this NFT has expired");
 
 
@@ -731,6 +836,8 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver {
             emit Expired(tempWordInfo.minter, _tokenId);
         }
         else {
+            WETH.transferFrom(msg.sender, address(this), _newBid);
+
             tokenIdForAllBids[_tokenId][lengthForAllBids[_tokenId]] = Bid(payable(msg.sender), _newBid);
             lengthForAllBids[_tokenId]++;
             tokenIdForCurrentBid[_tokenId] = CurrentBid(payable(msg.sender), _newBid);
@@ -749,7 +856,8 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver {
         address payable tempBidder = tokenIdForAllBids[_tokenId][lengthForAllBids[_tokenId]].bidder;
         uint256 tempBidAmount = tokenIdForAllBids[_tokenId][lengthForAllBids[_tokenId]].bidAmount;
 
-        sendValue(tempBidder, tempBidAmount);
+        WETH.transferFrom(address(this), tempBidder, tempBidAmount);
+        // sendValue(tempBidder, tempBidAmount);
         
         if (tokenIdForAllBids[_tokenId][lengthForAllBids[_tokenId] - 1].bidder == _bidder && 
         tokenIdForAllBids[_tokenId][lengthForAllBids[_tokenId] - 1].bidAmount == _bidAmount) {
@@ -774,49 +882,47 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver {
         WordInfo memory tempWordInfo = tokenIdForWordInfo[_tokenId];
         uint256 tempBidAmount = tokenIdForCurrentBid[_tokenId].currentBidAmount;
         address payable tempBidder = tokenIdForCurrentBid[_tokenId].currentBidder;
-        require(msg.value == tempBidAmount, "claim::Insufficient funds provided to claim this NFT");
         require(tempWordInfo.minter != tempBidder, "claim::Minter cannot claim the NFT");
-        // require(block.timestamp >= tempExpiryTime, "claim::NFT can be claimed once bidding time has expired");
+        require(block.timestamp >= tempWordInfo.expiryTime, "claim::NFT can be claimed once bidding time has expired");
 
-        if (block.timestamp > tempWordInfo.expiryTime) {
+
+        if (tokenIdForCurrentBid[_tokenId].currentBidAmount == 0.01 ether) {
             wordsNFT.transferFrom(address(this), tempWordInfo.minter, _tokenId);
 
-            emit Expired(tempWordInfo.minter, _tokenId);
+            emit ClaimedAndNoBidsMade(tempWordInfo.minter, _tokenId);
         }
         else {
-            if (tokenIdForCurrentBid[_tokenId].currentBidAmount == 0.01 ether) {
-                wordsNFT.transferFrom(address(this), tempWordInfo.minter, _tokenId);
-            }
-            else {
-                wordsNFT.transferFrom(address(this), tempBidder, _tokenId);
+            wordsNFT.transferFrom(address(this), tempBidder, _tokenId);
 
-                uint256 dividend = 100;
-                dividend = dividend.div(marketplacePercentage);
-                uint256 marketplaceShare = tempBidAmount.div(dividend);
-                uint256 minterShare = tempBidAmount.sub(marketplaceShare);
-                require(marketplaceShare + minterShare == tempBidAmount, "bid::Div error checker failed");
-                sendValue(marketplaceFeeWallet, marketplaceShare);
-                sendValue(tempWordInfo.minter, minterShare);
-            }
-
-            revertAllOtherBids(_tokenId);
-
-            emit ClaimedAndTransferred(tempBidder, tempWordInfo.minter, tempBidAmount, _tokenId);
+            uint256 dividend = 100;
+            dividend = dividend.div(marketplacePercentage);
+            uint256 marketplaceShare = tempBidAmount.div(dividend);
+            uint256 minterShare = tempBidAmount.sub(marketplaceShare);
+            require(marketplaceShare + minterShare == tempBidAmount, "bid::Div error checker failed");
+            WETH.transferFrom(address(this), marketplaceFeeWallet, marketplaceShare);
+            WETH.transferFrom(address(this), tempWordInfo.minter, minterShare);    
+            // sendValue(marketplaceFeeWallet, marketplaceShare);
+            // sendValue(tempWordInfo.minter, minterShare);
         }
+
+        revertAllOtherBids(_tokenId);
+
+        emit ClaimedAndTransferred(tempBidder, tempWordInfo.minter, tempBidAmount, _tokenId);
     }
 
-    function sendValue(address payable recipient, uint256 amount) internal {
-        require(address(this).balance >= amount, "sendValue: insufficient balance");
+    // function sendValue(address payable recipient, uint256 amount) internal {
+    //     require(address(this).balance >= amount, "sendValue: insufficient balance");
 
-        // solhint-disable-next-line avoid-low-level-calls, avoid-call-value
-        (bool success, ) = recipient.call{ value: amount }("");
-        require(success, "sendValue: unable to send value, recipient may have reverted");
-    }
+    //     // solhint-disable-next-line avoid-low-level-calls, avoid-call-value
+    //     (bool success, ) = recipient.call{ value: amount }("");
+    //     require(success, "sendValue: unable to send value, recipient may have reverted");
+    // }
 
     function revertAllOtherBids(uint256 _tokenId) internal {
         for (uint256 i = 0 ; i < lengthForAllBids[_tokenId] - 1 ; i++) {
             if (tokenIdForAllBids[_tokenId][i].bidAmount > 0 ether) {
-                sendValue(tokenIdForAllBids[_tokenId][i].bidder, tokenIdForAllBids[_tokenId][i].bidAmount);
+                WETH.transferFrom(address(this), tokenIdForAllBids[_tokenId][i].bidder, tokenIdForAllBids[_tokenId][i].bidAmount);
+                // sendValue(tokenIdForAllBids[_tokenId][i].bidder, tokenIdForAllBids[_tokenId][i].bidAmount);
             }
         }
 
@@ -829,12 +935,14 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver {
         _;
     }
 
-    // TODO WETH for bidding
+    // TODO confirm wether or not this contract should call approve hence making life easier for msg.sender
+    // TODO/Done WETH for bidding
+    // TODO/Done remove payable, check if amounts stored are in wei, IERC20, isApproved, balanceOf, transferFrom when claimed/expired, revertForCurrentBid
     // TODO/Done store previous bids
     // TODO/Done cancelBid structure and logic to be confirmed and then deployed
     
     // TODO/Done when to check if expiry time has been reached to execute functions/events 
     // TODO/Done transfer to minter if no bid has been made
     // TODO/Done transfer to bidder once claimed
-    // TODO/Done revert all other bids at expiry/claim
+    // TODO/Done revert all other bids at claim/expiry
 }
