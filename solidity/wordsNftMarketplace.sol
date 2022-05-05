@@ -741,7 +741,8 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver {
     // Constructor
 
     constructor() {
-        marketplaceFeeWallet = payable(0x0000000000000000000000000000000000000000); // TODO
+        // marketplaceFeeWallet = payable(0x0000000000000000000000000000000000000000); // TODO
+        marketplaceFeeWallet = payable(0x78731D3Ca6b7E34aC0F824c42a7cC18A495cabaB); // TODO
 
         marketplacePercentage = 50;
         minterPercentage = 50;
@@ -750,10 +751,10 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver {
         
         startingBid = 0.01 ether;
         // bidExpiryTime = 24 hours;
-        bidExpiryTime = 2 minutes;
+        bidExpiryTime = 1 minutes;
         bumpBidExpiryTime = 1 minutes;
 
-        WETH = IERC20(0xc778417E063141139Fce010982780140Aa0cD5Ab); //Testnet
+        // WETH = IERC20(0x70c61BE68924dbb8DfBEc732772030874113345C); //Testnet
         // WETH = IERC20(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2); //Mainnet
     }
 
@@ -764,15 +765,15 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver {
 
         emit ChangedWordsNFTAddress(address(wordsNFT));
     }
+    
+    function setWETHContractAddress(address _stablecoinContractAddress) public onlyOwner {
+        WETH = IERC20(_stablecoinContractAddress);
+    }
 
     function setMarketplaceFeeWallet(address payable _marketplaceFeeWallet) public onlyOwner {
         marketplaceFeeWallet = _marketplaceFeeWallet;
 
         emit ChangedMarketplaceFeeWallet(_marketplaceFeeWallet);
-    }
-
-    function setWETH(address _stablecoinContractAddress) public onlyOwner {
-        WETH = IERC20(_stablecoinContractAddress);
     }
 
     function setFeePercentages(uint8 _marketplacePercentage) external onlyOwner {
@@ -811,9 +812,9 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver {
         return IERC721Receiver.onERC721Received.selector;
     }
 
-    function bid(uint256 _newBid, uint256 _tokenId) external payable {
+    function bid(uint256 _newBid, uint256 _tokenId) external {
         // (address payable tempMinter, uint256 tempMintTime, uint256 tempExpiryTime) = wordsNFT.getWordInfo(_tokenId);
-        uint256 sentValue = WETH.allowance(msg.sender, address(this));
+        uint256 allowance = WETH.allowance(msg.sender, address(this));
         WordInfo memory tempWordInfo = tokenIdForWordInfo[_tokenId];
         uint256 currentHighestBid = tokenIdForCurrentBid[_tokenId].currentBidAmount;
         
@@ -825,8 +826,8 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver {
         }
         require(_newBid > currentHighestBid.add(currentHighestBid.mul(minimumBidIncreasePercentage).div(100)), "bid::Bid must be higher than 1% of current highest bid");
         require(msg.sender != tempWordInfo.minter, "bid::Minter cannot bid");
-        require(sentValue != 0, "bid::Approved WETH must not be 0 Wei or Approval must be given");
-        require(sentValue >= _newBid, "bid::Approved WETH must be greater than or equal to the bid amount");
+        require(allowance != 0, "bid::Approved WETH must not be 0 Wei or Approval must be given");
+        require(allowance >= _newBid, "bid::Approved WETH must be greater than or equal to the bid amount");
         // require(block.timestamp <= tempExpiryTime, "bid::Bidding time for this NFT has expired");
 
 
@@ -836,7 +837,7 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver {
             emit Expired(tempWordInfo.minter, _tokenId);
         }
         else {
-            WETH.transferFrom(msg.sender, address(this), _newBid);
+            require(WETH.transferFrom(msg.sender, address(this), _newBid), "bid::Error in WETH.transferFrom");
 
             tokenIdForAllBids[_tokenId][lengthForAllBids[_tokenId]] = Bid(payable(msg.sender), _newBid);
             lengthForAllBids[_tokenId]++;
@@ -852,11 +853,12 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver {
     function cancelBid(address _bidder, uint256 _bidAmount, uint256 _tokenId) external {
         // (address payable tempMinter, , uint256 tempExpiryTime) = wordsNFT.getWordInfo(_tokenId);
         // require(block.timestamp <= tempExpiryTime, "bid::Bidding time for this NFT has expired");
+        require(msg.sender == _bidder, "cancelBid::Only bidder can cancel their own bids");
 
         address payable tempBidder = tokenIdForAllBids[_tokenId][lengthForAllBids[_tokenId]].bidder;
         uint256 tempBidAmount = tokenIdForAllBids[_tokenId][lengthForAllBids[_tokenId]].bidAmount;
 
-        WETH.transferFrom(address(this), tempBidder, tempBidAmount);
+        require(WETH.transfer(tempBidder, tempBidAmount), "cancelBid::Error in WETH.transfer");
         // sendValue(tempBidder, tempBidAmount);
         
         if (tokenIdForAllBids[_tokenId][lengthForAllBids[_tokenId] - 1].bidder == _bidder && 
@@ -877,13 +879,13 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver {
         emit BidCancelled(tempBidder, tempBidAmount, _tokenId);
     }
 
-    function claim(uint256 _tokenId) external payable {
+    function claim(uint256 _tokenId) external {
         // (address payable tempMinter, , uint256 tempExpiryTime) = wordsNFT.getWordInfo(_tokenId);
         WordInfo memory tempWordInfo = tokenIdForWordInfo[_tokenId];
         uint256 tempBidAmount = tokenIdForCurrentBid[_tokenId].currentBidAmount;
         address payable tempBidder = tokenIdForCurrentBid[_tokenId].currentBidder;
         require(tempWordInfo.minter != tempBidder, "claim::Minter cannot claim the NFT");
-        require(block.timestamp >= tempWordInfo.expiryTime, "claim::NFT can be claimed once bidding time has expired");
+        require(block.timestamp >= tempWordInfo.expiryTime, "claim::NFT can only be claimed once bidding time has expired");
 
 
         if (tokenIdForCurrentBid[_tokenId].currentBidAmount == 0.01 ether) {
@@ -899,8 +901,8 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver {
             uint256 marketplaceShare = tempBidAmount.div(dividend);
             uint256 minterShare = tempBidAmount.sub(marketplaceShare);
             require(marketplaceShare + minterShare == tempBidAmount, "bid::Div error checker failed");
-            WETH.transferFrom(address(this), marketplaceFeeWallet, marketplaceShare);
-            WETH.transferFrom(address(this), tempWordInfo.minter, minterShare);    
+            require(WETH.transfer(marketplaceFeeWallet, marketplaceShare), "claim::Error in WETH.transfer");
+            require(WETH.transfer(tempWordInfo.minter, minterShare), "claim::Error in WETH.transfer");    
             // sendValue(marketplaceFeeWallet, marketplaceShare);
             // sendValue(tempWordInfo.minter, minterShare);
         }
@@ -921,11 +923,10 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver {
     function revertAllOtherBids(uint256 _tokenId) internal {
         for (uint256 i = 0 ; i < lengthForAllBids[_tokenId] - 1 ; i++) {
             if (tokenIdForAllBids[_tokenId][i].bidAmount > 0 ether) {
-                WETH.transferFrom(address(this), tokenIdForAllBids[_tokenId][i].bidder, tokenIdForAllBids[_tokenId][i].bidAmount);
+                require(WETH.transfer(tokenIdForAllBids[_tokenId][i].bidder, tokenIdForAllBids[_tokenId][i].bidAmount), "revertAllOtherBids::Error in WETH.transfer");
                 // sendValue(tokenIdForAllBids[_tokenId][i].bidder, tokenIdForAllBids[_tokenId][i].bidAmount);
             }
         }
-
     }
     
     receive() external payable {}
@@ -937,9 +938,9 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver {
 
     // TODO confirm wether or not this contract should call approve hence making life easier for msg.sender
     // TODO/Done WETH for bidding
-    // TODO/Done remove payable, check if amounts stored are in wei, IERC20, isApproved, balanceOf, transferFrom when claimed/expired, revertForCurrentBid
+    // TODO/Done isApproved, balanceOf, transferFrom when claimed/expired, revertForCurrentBid, remove payable
     // TODO/Done store previous bids
-    // TODO/Done cancelBid structure and logic to be confirmed and then deployed
+    // TODO/Done cancelBid structure and logic to be confirmed
     
     // TODO/Done when to check if expiry time has been reached to execute functions/events 
     // TODO/Done transfer to minter if no bid has been made
