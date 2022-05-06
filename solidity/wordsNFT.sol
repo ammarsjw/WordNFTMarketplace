@@ -1556,19 +1556,16 @@ contract WordsNFT is ERC721Enumerable, Ownable {
     using Strings for uint256;
 
     // Optional mapping for token URIs
-    mapping(uint256 => string) private _tokenURIs;
+    mapping(uint256 => string) public _tokenURIs;
 
-    mapping (string => bool) existingNames;
+    mapping (string => bool) public existingNames;
     address payable public marketplaceContractAddress;
     IWordNFTMarketplace public marketplaceContract;
 
-    bool marketplaceActive;
+    bool public marketplaceActive;
 
-    address payable tempMinter;
-    uint256 tempTokenId;
-
-    uint256 minLength;
-    uint256 maxLength;
+    uint256 public minLength;
+    uint256 public maxLength;
 
     event Mint(
         address indexed minter,
@@ -1585,9 +1582,11 @@ contract WordsNFT is ERC721Enumerable, Ownable {
     );
 
     constructor() ERC721("WordsNft", "Words") {
+        maxLength = 50;
+        minLength = 1;
     }
 
-    function setNameLengths(uint256 _maxLength, uint256 _minLength) public {
+    function setNameLengths(uint256 _maxLength, uint256 _minLength) public onlyOwner {
         maxLength = _maxLength;
         minLength = _minLength;
     }
@@ -1687,7 +1686,9 @@ contract WordsNFT is ERC721Enumerable, Ownable {
     }
 
     function _checkName(string memory _name) public view returns(bool){
+        
         uint allowedChars =0;
+
         bytes memory byteString = bytes(_name);
         bytes memory allowed = bytes("abcdefghijklmnopqrstuvwxyz");  //here you put what character are allowed to use
         for(uint i=0; i < byteString.length ; i++){
@@ -1700,6 +1701,7 @@ contract WordsNFT is ERC721Enumerable, Ownable {
         if(allowedChars < byteString.length){
             require(false, "_checkName::Incorrect characters used, use::abcdefghijklmnopqrstuvwxyz");
         }
+
         require(byteString.length <= maxLength && byteString.length >= minLength, "_checkName::Incorrect length");
 
         return true;
