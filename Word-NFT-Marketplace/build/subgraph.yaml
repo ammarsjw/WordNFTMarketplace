@@ -1,0 +1,54 @@
+specVersion: 0.0.2
+schema:
+  file: schema.graphql
+dataSources:
+  - kind: ethereum
+    name: WordsNFTMarketplace
+    network: rinkeby
+    source:
+      address: "0x1aF15eaa6984d4B8692f49e265B02772b7881c67"
+      abi: WordsNFTMarketplace
+      startBlock: 10627828
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.5
+      language: wasm/assemblyscript
+      entities:
+        - AuctionMade
+        - BidCancelled
+        - BidMade
+        - ChangedFeePercentages
+        - ChangedMarketplaceFeeWallet
+        - ChangedWordsNFTAddress
+        - ClaimedAndNoBidsMade
+        - ClaimedAndTransferred
+        - ERC721Received
+        - Expired
+        - OwnershipTransferred
+      abis:
+        - name: WordsNFTMarketplace
+          file: WordsNFTMarketplace/abis/WordsNFTMarketplace.json
+      eventHandlers:
+        - event: AuctionMade(indexed address,uint256,uint256)
+          handler: handleAuctionMade
+        - event: BidCancelled(indexed address,uint256,uint256)
+          handler: handleBidCancelled
+        - event: BidMade(indexed address,uint256,uint256)
+          handler: handleBidMade
+        - event: ChangedFeePercentages(uint8,uint8)
+          handler: handleChangedFeePercentages
+        - event: ChangedMarketplaceFeeWallet(indexed address)
+          handler: handleChangedMarketplaceFeeWallet
+        - event: ChangedWordsNFTAddress(indexed address)
+          handler: handleChangedWordsNFTAddress
+        - event: ClaimedAndNoBidsMade(indexed address,uint256)
+          handler: handleClaimedAndNoBidsMade
+        - event: ClaimedAndTransferred(indexed address,indexed address,uint256,uint256)
+          handler: handleClaimedAndTransferred
+        - event: ERC721Received(indexed address,indexed address,uint256,bytes)
+          handler: handleERC721Received
+        - event: Expired(indexed address,uint256)
+          handler: handleExpired
+        - event: OwnershipTransferred(indexed address,indexed address)
+          handler: handleOwnershipTransferred
+      file: WordsNFTMarketplace/WordsNFTMarketplace.wasm

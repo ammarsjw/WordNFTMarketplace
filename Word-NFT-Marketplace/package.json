@@ -1,0 +1,17 @@
+{
+  "name": "words-nft-marketplace",
+  "license": "UNLICENSED",
+  "scripts": {
+    "codegen": "graph codegen",
+    "build": "graph build",
+    "deploy": "graph deploy --node https://api.thegraph.com/deploy/ wasif28/Words-NFT-Marketplace",
+    "create-local": "graph create --node http://localhost:8020/ wasif28/Words-NFT-Marketplace",
+    "remove-local": "graph remove --node http://localhost:8020/ wasif28/Words-NFT-Marketplace",
+    "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 wasif28/Words-NFT-Marketplace",
+    "deploy-hosted": "graph deploy --product hosted-service wasif28/Word-NFT-Marketplace"
+  },
+  "dependencies": {
+    "@graphprotocol/graph-cli": "0.26.0",
+    "@graphprotocol/graph-ts": "0.24.1"
+  }
+}

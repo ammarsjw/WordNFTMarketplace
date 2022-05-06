@@ -1,0 +1,92 @@
+type Transaction @entity {
+  id: ID!
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  blockHash: Bytes!
+  from: Bytes!
+  to: Bytes
+  value: BigInt!
+  gasPrice: BigInt!
+}
+
+type OwnershipTransferred @entity {
+  id: ID!
+  transaction: Transaction!
+  previousOwner: Bytes!
+  newOwner: Bytes!
+}
+
+type Expired @entity {
+  id: ID!
+  transaction: Transaction!
+  _minter: Bytes!
+  _tokenId: BigInt!
+}
+
+type ERC721Received @entity {
+  id: ID!
+  transaction: Transaction!
+  _operator: Bytes!
+  _to: Bytes!
+  _tokenId: BigInt!
+  data: Bytes!
+}
+
+type ClaimedAndTransferred @entity {
+  id: ID!
+  transaction: Transaction!
+  _bidder: Bytes!
+  _minter: Bytes!
+  _amount: BigInt!
+  _tokenId: BigInt!
+}
+
+type ClaimedAndNoBidsMade @entity {
+  id: ID!
+  transaction: Transaction!
+  _minter: Bytes!
+  _tokenId: BigInt!
+}
+
+type ChangedWordsNFTAddress @entity {
+  id: ID!
+  transaction: Transaction!
+  _wordsNFTAddress: Bytes!
+}
+
+type ChangedMarketplaceFeeWallet @entity {
+  id: ID!
+  transaction: Transaction!
+  _marketplaceFeeWallet: Bytes!
+}
+
+type ChangedFeePercentages @entity {
+  id: ID!
+  transaction: Transaction!
+  _marketplacePercentage: Int!
+  _minterPercentage: Int!
+}
+
+type BidMade @entity {
+  id: ID!
+  transaction: Transaction!
+  _bidder: Bytes!
+  _amount: BigInt!
+  _tokenId: BigInt!
+}
+
+type BidCancelled @entity {
+  id: ID!
+  transaction: Transaction!
+  _bidder: Bytes!
+  _amount: BigInt!
+  _tokenId: BigInt!
+}
+
+type AuctionMade @entity {
+  id: ID!
+  transaction: Transaction!
+  _minter: Bytes!
+  _mintTime: BigInt!
+  _initialExpiryTime: BigInt!
+}
