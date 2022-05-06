@@ -801,7 +801,6 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver {
     // functions
 
     function setOnAuction(address payable _minter, uint256 _tokenId) external onlyContract {
-        // (address payable minter, uint256 tokenId) = wordsNFT.getForAuction();
         tokenIdForWordInfo[_tokenId] = WordInfo(_minter, block.timestamp, block.timestamp + bidExpiryTime);
     }
 
@@ -812,7 +811,6 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver {
     }
 
     function bid(uint256 _newBid, uint256 _tokenId) external {
-        // (address payable tempMinter, uint256 tempMintTime, uint256 tempExpiryTime) = wordsNFT.getWordInfo(_tokenId);
         uint256 allowance = WETH.allowance(msg.sender, address(this));
         WordInfo memory tempWordInfo = tokenIdForWordInfo[_tokenId];
         uint256 currentHighestBid = tokenIdForCurrentBid[_tokenId].currentBidAmount;
@@ -827,7 +825,6 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver {
         require(msg.sender != tempWordInfo.minter, "bid::Minter cannot bid");
         require(allowance != 0, "bid::Approved WETH must not be 0 Wei or Approval must be given");
         require(allowance >= _newBid, "bid::Approved WETH must be greater than or equal to the bid amount");
-        // require(block.timestamp <= tempExpiryTime, "bid::Bidding time for this NFT has expired");
 
 
         if (block.timestamp > tempWordInfo.expiryTime) {
@@ -850,8 +847,6 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver {
     }
 
     function cancelBid(address payable _bidder, uint256 _bidAmount, uint256 _tokenId) external {
-        // (address payable tempMinter, , uint256 tempExpiryTime) = wordsNFT.getWordInfo(_tokenId);
-        // require(block.timestamp <= tempExpiryTime, "bid::Bidding time for this NFT has expired");
         require(_bidAmount > 0.01 ether, "cancelBid::No such bid exists");
         require(msg.sender == _bidder, "cancelBid::Only bidder can cancel their own bids");
 
@@ -907,7 +902,6 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver {
     }
 
     function claim(uint256 _tokenId) external {
-        // (address payable tempMinter, , uint256 tempExpiryTime) = wordsNFT.getWordInfo(_tokenId);
         WordInfo memory tempWordInfo = tokenIdForWordInfo[_tokenId];
         uint256 tempBidAmount = tokenIdForCurrentBid[_tokenId].currentBidAmount;
         address payable tempBidder = tokenIdForCurrentBid[_tokenId].currentBidder;
@@ -963,14 +957,4 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver {
         require(msg.sender == address(wordsNFT), "onlyContract::Only WordsNFT Contract can call this function");
         _;
     }
-
-    // TODO/Done WETH for bidding
-    // TODO/Done isApproved, balanceOf, transferFrom when claimed/expired, revertForCurrentBid, remove payable
-    // TODO/Done store previous bids
-    // TODO/Done cancelBid structure and logic to be confirmed
-    
-    // TODO/Done when to check if expiry time has been reached to execute functions/events 
-    // TODO/Done transfer to minter if no bid has been made
-    // TODO/Done transfer to bidder once claimed
-    // TODO/Done revert all other bids at claim/expiry
 }
