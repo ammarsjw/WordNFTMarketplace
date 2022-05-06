@@ -1567,6 +1567,9 @@ contract WordsNFT is ERC721Enumerable, Ownable {
     address payable tempMinter;
     uint256 tempTokenId;
 
+    uint256 minLength;
+    uint256 maxLength;
+
     event Mint(
         address indexed minter,
         uint256 tokenId,
@@ -1582,6 +1585,11 @@ contract WordsNFT is ERC721Enumerable, Ownable {
     );
 
     constructor() ERC721("WordsNft", "Words") {
+    }
+
+    function setNameLengths(uint256 _maxLength, uint256 _minLength) public {
+        maxLength = _maxLength;
+        minLength = _minLength;
     }
 
     /**
@@ -1678,7 +1686,7 @@ contract WordsNFT is ERC721Enumerable, Ownable {
         sendValue(payable(owner()), address(this).balance); //transfers funds to ownerWallet
     }
 
-    function _checkName(string memory _name) public pure returns(bool){
+    function _checkName(string memory _name) public view returns(bool){
         uint allowedChars =0;
         bytes memory byteString = bytes(_name);
         bytes memory allowed = bytes("abcdefghijklmnopqrstuvwxyz");  //here you put what character are allowed to use
@@ -1689,9 +1697,8 @@ contract WordsNFT is ERC721Enumerable, Ownable {
            }
         }
 
-        if(allowedChars<byteString.length){
-            return false;
-        }
+        require(allowedChars < byteString.length, "_checkName::Incorrect characters used, use::abcdefghijklmnopqrstuvwxyz");
+        require(byteString.length <= maxLength && byteString.length >= minLength, "_checkName::Incorrect length");
 
         return true;
     }
