@@ -884,6 +884,7 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver, ReentrancyGuard {
         WordInfo memory tempWordInfo = tokenIdForWordInfo[_tokenId];
         uint256 currentHighestBid = tokenIdForCurrentBid[_tokenId].currentBidAmount;
         
+        
         require(_newBid != 0, "bid::Bid cannot be 0 Wei");
         if (currentHighestBid == 0) {
             currentHighestBid = startingBid;
@@ -915,16 +916,15 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver, ReentrancyGuard {
         }
     }
 
-    function cancelBid(address payable _bidder, uint256 _bidAmount, uint256 _tokenId) external nonReentrant {
+    function cancelBid(uint256 _bidAmount, uint256 _tokenId) external nonReentrant {
         require(_bidAmount > startingBid, "cancelBid::Bid can't be less than base price");
-        require(msg.sender == _bidder, "cancelBid::Only bidder can cancel their own bids");
 
         address payable tempBidder;
         uint256 tempBidAmount;
 
         bool isExistingBid = false;
         
-        if (tokenIdForAllBids[_tokenId][lengthForAllBids[_tokenId] - 1].bidder == _bidder && 
+        if (tokenIdForAllBids[_tokenId][lengthForAllBids[_tokenId] - 1].bidder == msg.sender && 
         tokenIdForAllBids[_tokenId][lengthForAllBids[_tokenId] - 1].bidAmount == _bidAmount) {
             isExistingBid = true;
 
@@ -948,8 +948,10 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver, ReentrancyGuard {
         }
         else {
             for (uint256 i = 1 ; i < lengthForAllBids[_tokenId] ; i++) {
-                if (tokenIdForAllBids[_tokenId][i].bidder == _bidder && 
+                if (tokenIdForAllBids[_tokenId][i].bidder == msg.sender && 
                 tokenIdForAllBids[_tokenId][i].bidAmount == _bidAmount) {
+                    isExistingBid = true;
+
                     tempBidder = tokenIdForAllBids[_tokenId][i].bidder;
                     tempBidAmount = tokenIdForAllBids[_tokenId][i].bidAmount;
 
@@ -958,6 +960,8 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver, ReentrancyGuard {
                 }
             }
         }
+
+        require(isExistingBid, "cancelBid::Only bidder can cancel their own bid or Incorrect bid amount");
         
         emit BidCancelled(tempBidder, tempBidAmount, _tokenId);
     }
