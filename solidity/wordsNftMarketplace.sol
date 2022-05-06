@@ -705,7 +705,7 @@ abstract contract ReentrancyGuard {
 
 interface IWordsNFT is IERC721{
 
-    function getForAuction() external view returns(address payable, uint256);
+    function getForAuction() external view returns (address payable, uint256);
 
 }
 
@@ -843,7 +843,7 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver, ReentrancyGuard {
     }
 
     function setFeePercentages(uint8 _marketplacePercentage) external onlyOwner {
-        require(_marketplacePercentage < 100, "setFeePercentages::The owner cut should be less then 100%");
+        require(_marketplacePercentage < 100, "setFeePercentages::The marketplace cut should be less then 100%");
 
         marketplacePercentage = _marketplacePercentage;
         minterPercentage = 100 - marketplacePercentage;
@@ -857,11 +857,11 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver, ReentrancyGuard {
 
     // getters
 
-    function getWordsNFTContractAddress() public view onlyOwner returns(address) {
+    function getWordsNFTContractAddress() public view onlyOwner returns (address) {
         return address(wordsNFT);
     }
 
-    function getMarketplaceFeeWallet() public view onlyOwner returns(address payable) {
+    function getMarketplaceFeeWallet() public view onlyOwner returns (address payable) {
         return marketplaceFeeWallet;
     }
 
@@ -916,7 +916,7 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver, ReentrancyGuard {
     }
 
     function cancelBid(address payable _bidder, uint256 _bidAmount, uint256 _tokenId) external nonReentrant {
-        require(_bidAmount > startingBid, "cancelBid::Bid must have a value greater than base price");
+        require(_bidAmount > startingBid, "cancelBid::Bid can't be less than base price");
         require(msg.sender == _bidder, "cancelBid::Only bidder can cancel their own bids");
 
         address payable tempBidder;
@@ -934,20 +934,12 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver, ReentrancyGuard {
             require(WETH.transferFrom(address(this), tempBidder, tempBidAmount), "cancelBid::Error in WETH.transfer");
 
             tokenIdForAllBids[_tokenId][lengthForAllBids[_tokenId] - 1] = Bid(payable(0x0), 0 ether);
-            for (uint256 i = lengthForAllBids[_tokenId] - 2 ; i >= 0 ; i--) {
+            for (uint256 i = lengthForAllBids[_tokenId] - 2 ; i > 0 ; i--) {
                 if (tokenIdForAllBids[_tokenId][i].bidAmount != 0) {
-                    if (tokenIdForAllBids[_tokenId][i].bidAmount > startingBid) {
-                        tokenIdForCurrentBid[_tokenId].currentBidder = tokenIdForAllBids[_tokenId][i].bidder;
-                        tokenIdForCurrentBid[_tokenId].currentBidAmount = tokenIdForAllBids[_tokenId][i].bidAmount;
-                        lengthForAllBids[_tokenId]--;
-                        break;
-                    }
-                    else {
-                        tokenIdForCurrentBid[_tokenId].currentBidder = payable(0x0);
-                        tokenIdForCurrentBid[_tokenId].currentBidAmount = 0 ether;
-                        lengthForAllBids[_tokenId]--;
-                        break;
-                    }
+                    tokenIdForCurrentBid[_tokenId].currentBidder = tokenIdForAllBids[_tokenId][i].bidder;
+                    tokenIdForCurrentBid[_tokenId].currentBidAmount = tokenIdForAllBids[_tokenId][i].bidAmount;
+                    lengthForAllBids[_tokenId]--;
+                    break;
                 }
                 else {
                     lengthForAllBids[_tokenId]--;
@@ -955,7 +947,7 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver, ReentrancyGuard {
             }
         }
         else {
-            for (uint256 i = 0 ; i < lengthForAllBids[_tokenId] ; i++) {
+            for (uint256 i = 1 ; i < lengthForAllBids[_tokenId] ; i++) {
                 if (tokenIdForAllBids[_tokenId][i].bidder == _bidder && 
                 tokenIdForAllBids[_tokenId][i].bidAmount == _bidAmount) {
                     tempBidder = tokenIdForAllBids[_tokenId][i].bidder;
