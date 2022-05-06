@@ -763,6 +763,12 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver, ReentrancyGuard {
         address indexed _wordsNFTAddress
     );
 
+    event AuctionMade (
+        address indexed _minter,
+        uint256 _mintTime,
+        uint256 _initialExpiryTime
+    );
+
     event BidMade (
         address indexed _bidder,
         uint256 _amount,
@@ -863,6 +869,8 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver, ReentrancyGuard {
 
     function setOnAuction(address payable _minter, uint256 _tokenId) external onlyContract {
         tokenIdForWordInfo[_tokenId] = WordInfo(_minter, block.timestamp, block.timestamp + bidExpiryTime);
+
+        emit AuctionMade(tokenIdForWordInfo[_tokenId].minter, tokenIdForWordInfo[_tokenId].mintTime, tokenIdForWordInfo[_tokenId].expiryTime);
     }
 
     function onERC721Received(address _operator, address _from, uint256 _tokenId, bytes calldata _data) external override returns (bytes4) {
