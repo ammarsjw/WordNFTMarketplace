@@ -741,8 +741,7 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver {
     // Constructor
 
     constructor() {
-        // marketplaceFeeWallet = payable(0x0000000000000000000000000000000000000000); // TODO
-        marketplaceFeeWallet = payable(0x78731D3Ca6b7E34aC0F824c42a7cC18A495cabaB); // TODO
+        marketplaceFeeWallet = payable(0x0000000000000000000000000000000000000000); // TODO
 
         marketplacePercentage = 50;
         minterPercentage = 50;
@@ -750,9 +749,9 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver {
         minimumBidIncreasePercentage = 1;
         
         startingBid = 0.01 ether;
-        // bidExpiryTime = 24 hours;
-        bidExpiryTime = 1 minutes;
-        bumpBidExpiryTime = 1 minutes;
+        bidExpiryTime = 24 hours;
+        // bidExpiryTime = 1 minutes;
+        bumpBidExpiryTime = 10 minutes;
 
         // WETH = IERC20(0x70c61BE68924dbb8DfBEc732772030874113345C); //Testnet
         // WETH = IERC20(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2); //Mainnet
@@ -855,22 +854,33 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver {
         // require(block.timestamp <= tempExpiryTime, "bid::Bidding time for this NFT has expired");
         require(msg.sender == _bidder, "cancelBid::Only bidder can cancel their own bids");
 
-        address payable tempBidder = tokenIdForAllBids[_tokenId][lengthForAllBids[_tokenId]].bidder;
-        uint256 tempBidAmount = tokenIdForAllBids[_tokenId][lengthForAllBids[_tokenId]].bidAmount;
-
-        require(WETH.transfer(tempBidder, tempBidAmount), "cancelBid::Error in WETH.transfer");
+        address payable tempBidder;
+        uint256 tempBidAmount;
         // sendValue(tempBidder, tempBidAmount);
         
         if (tokenIdForAllBids[_tokenId][lengthForAllBids[_tokenId] - 1].bidder == _bidder && 
         tokenIdForAllBids[_tokenId][lengthForAllBids[_tokenId] - 1].bidAmount == _bidAmount) {
+            tempBidder = tokenIdForAllBids[_tokenId][lengthForAllBids[_tokenId] - 1].bidder;
+            tempBidAmount = tokenIdForAllBids[_tokenId][lengthForAllBids[_tokenId] - 1].bidAmount;
+
+            require(WETH.transferFrom(address(this), tempBidder, tempBidAmount), "cancelBid::Error in WETH.transfer");
+
             tokenIdForAllBids[_tokenId][lengthForAllBids[_tokenId] - 1] = Bid(payable(0x0), 0 ether);
-            tokenIdForCurrentBid[_tokenId].currentBidder = tokenIdForAllBids[_tokenId][lengthForAllBids[_tokenId] - 2].bidder;
-            tokenIdForCurrentBid[_tokenId].currentBidAmount = tokenIdForAllBids[_tokenId][lengthForAllBids[_tokenId] - 2].bidAmount;
-            lengthForAllBids[_tokenId]--;
+            for (uint256 i = lengthForAllBids[_tokenId] - 2 ; i >= 0 ; i--) {
+                if (tokenIdForAllBids[_tokenId][i].bidAmount != 0) {
+                    tokenIdForCurrentBid[_tokenId].currentBidder = tokenIdForAllBids[_tokenId][i].bidder;
+                    tokenIdForCurrentBid[_tokenId].currentBidAmount = tokenIdForAllBids[_tokenId][i].bidAmount;
+                }
+                lengthForAllBids[_tokenId]--;
+            }
         }
         else {
             for (uint256 i = 0 ; i < lengthForAllBids[_tokenId] ; i++) {
                 if (tokenIdForAllBids[_tokenId][i].bidder == _bidder && tokenIdForAllBids[_tokenId][i].bidAmount == _bidAmount) {
+                    tempBidder = tokenIdForAllBids[_tokenId][i].bidder;
+                    tempBidAmount = tokenIdForAllBids[_tokenId][i].bidAmount;
+
+                    require(WETH.transferFrom(address(this), tempBidder, tempBidAmount), "cancelBid::Error in WETH.transfer");
                     tokenIdForAllBids[_tokenId][i] = Bid(payable(0x0), 0 ether);
                 }
             }
@@ -886,6 +896,7 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver {
         address payable tempBidder = tokenIdForCurrentBid[_tokenId].currentBidder;
         require(tempWordInfo.minter != tempBidder, "claim::Minter cannot claim the NFT");
         require(block.timestamp >= tempWordInfo.expiryTime, "claim::NFT can only be claimed once bidding time has expired");
+        require(msg.sender == tempBidder, "claim::Only highest bidder can claim the NFT");
 
 
         if (tokenIdForCurrentBid[_tokenId].currentBidAmount == 0.01 ether) {
@@ -901,8 +912,8 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver {
             uint256 marketplaceShare = tempBidAmount.div(dividend);
             uint256 minterShare = tempBidAmount.sub(marketplaceShare);
             require(marketplaceShare + minterShare == tempBidAmount, "bid::Div error checker failed");
-            require(WETH.transfer(marketplaceFeeWallet, marketplaceShare), "claim::Error in WETH.transfer");
-            require(WETH.transfer(tempWordInfo.minter, minterShare), "claim::Error in WETH.transfer");    
+            require(WETH.transferFrom(address(this), marketplaceFeeWallet, marketplaceShare), "claim::Error in WETH.transfer");
+            require(WETH.transferFrom(address(this), tempWordInfo.minter, minterShare), "claim::Error in WETH.transfer");    
             // sendValue(marketplaceFeeWallet, marketplaceShare);
             // sendValue(tempWordInfo.minter, minterShare);
         }
@@ -922,8 +933,8 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver {
 
     function revertAllOtherBids(uint256 _tokenId) internal {
         for (uint256 i = 0 ; i < lengthForAllBids[_tokenId] - 1 ; i++) {
-            if (tokenIdForAllBids[_tokenId][i].bidAmount > 0 ether) {
-                require(WETH.transfer(tokenIdForAllBids[_tokenId][i].bidder, tokenIdForAllBids[_tokenId][i].bidAmount), "revertAllOtherBids::Error in WETH.transfer");
+            if (tokenIdForAllBids[_tokenId][i].bidAmount > 0.01 ether) {
+                require(WETH.transferFrom(address(this), tokenIdForAllBids[_tokenId][i].bidder, tokenIdForAllBids[_tokenId][i].bidAmount), "revertAllOtherBids::Error in WETH.transfer");
                 // sendValue(tokenIdForAllBids[_tokenId][i].bidder, tokenIdForAllBids[_tokenId][i].bidAmount);
             }
         }
@@ -936,7 +947,6 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver {
         _;
     }
 
-    // TODO confirm wether or not this contract should call approve hence making life easier for msg.sender
     // TODO/Done WETH for bidding
     // TODO/Done isApproved, balanceOf, transferFrom when claimed/expired, revertForCurrentBid, remove payable
     // TODO/Done store previous bids
