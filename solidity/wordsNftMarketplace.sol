@@ -849,17 +849,21 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver {
         }
     }
 
-    function cancelBid(address _bidder, uint256 _bidAmount, uint256 _tokenId) external {
+    function cancelBid(address payable _bidder, uint256 _bidAmount, uint256 _tokenId) external {
         // (address payable tempMinter, , uint256 tempExpiryTime) = wordsNFT.getWordInfo(_tokenId);
         // require(block.timestamp <= tempExpiryTime, "bid::Bidding time for this NFT has expired");
+        require(_bidAmount > 0.01 ether, "cancelBid::No such bid exists");
         require(msg.sender == _bidder, "cancelBid::Only bidder can cancel their own bids");
 
         address payable tempBidder;
         uint256 tempBidAmount;
-        // sendValue(tempBidder, tempBidAmount);
+
+        bool isExistingBid = false;
         
         if (tokenIdForAllBids[_tokenId][lengthForAllBids[_tokenId] - 1].bidder == _bidder && 
         tokenIdForAllBids[_tokenId][lengthForAllBids[_tokenId] - 1].bidAmount == _bidAmount) {
+            isExistingBid = true;
+
             tempBidder = tokenIdForAllBids[_tokenId][lengthForAllBids[_tokenId] - 1].bidder;
             tempBidAmount = tokenIdForAllBids[_tokenId][lengthForAllBids[_tokenId] - 1].bidAmount;
 
@@ -868,15 +872,28 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver {
             tokenIdForAllBids[_tokenId][lengthForAllBids[_tokenId] - 1] = Bid(payable(0x0), 0 ether);
             for (uint256 i = lengthForAllBids[_tokenId] - 2 ; i >= 0 ; i--) {
                 if (tokenIdForAllBids[_tokenId][i].bidAmount != 0) {
-                    tokenIdForCurrentBid[_tokenId].currentBidder = tokenIdForAllBids[_tokenId][i].bidder;
-                    tokenIdForCurrentBid[_tokenId].currentBidAmount = tokenIdForAllBids[_tokenId][i].bidAmount;
+                    if (tokenIdForAllBids[_tokenId][i].bidAmount > 0.01 ether) {
+                        tokenIdForCurrentBid[_tokenId].currentBidder = tokenIdForAllBids[_tokenId][i].bidder;
+                        tokenIdForCurrentBid[_tokenId].currentBidAmount = tokenIdForAllBids[_tokenId][i].bidAmount;
+                        lengthForAllBids[_tokenId]--;
+                        break;
+                    }
+                    else {
+                        tokenIdForCurrentBid[_tokenId].currentBidder = payable(0x0);
+                        tokenIdForCurrentBid[_tokenId].currentBidAmount = 0 ether;
+                        lengthForAllBids[_tokenId]--;
+                        break;
+                    }
                 }
-                lengthForAllBids[_tokenId]--;
+                else {
+                    lengthForAllBids[_tokenId]--;
+                }
             }
         }
         else {
             for (uint256 i = 0 ; i < lengthForAllBids[_tokenId] ; i++) {
-                if (tokenIdForAllBids[_tokenId][i].bidder == _bidder && tokenIdForAllBids[_tokenId][i].bidAmount == _bidAmount) {
+                if (tokenIdForAllBids[_tokenId][i].bidder == _bidder && 
+                tokenIdForAllBids[_tokenId][i].bidAmount == _bidAmount) {
                     tempBidder = tokenIdForAllBids[_tokenId][i].bidder;
                     tempBidAmount = tokenIdForAllBids[_tokenId][i].bidAmount;
 
