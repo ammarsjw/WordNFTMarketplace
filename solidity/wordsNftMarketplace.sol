@@ -879,7 +879,7 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver, ReentrancyGuard {
         require(_newBid != 0, "bid::Bid cannot be 0 Wei");
         if (currentHighestBid == 0) {
             currentHighestBid = startingBid;
-            tokenIdForAllBids[_tokenId][lengthForAllBids[_tokenId]] = Bid(payable(0x0), 0.01 ether);
+            tokenIdForAllBids[_tokenId][lengthForAllBids[_tokenId]] = Bid(payable(0x0), startingBid);
             lengthForAllBids[_tokenId]++;
         }
         require(_newBid > currentHighestBid.add(currentHighestBid.mul(minimumBidIncreasePercentage).div(100)), "bid::Bid must be higher than 1% of current highest bid");
@@ -908,7 +908,7 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver, ReentrancyGuard {
     }
 
     function cancelBid(address payable _bidder, uint256 _bidAmount, uint256 _tokenId) external nonReentrant {
-        require(_bidAmount > 0.01 ether, "cancelBid::No such bid exists");
+        require(_bidAmount > startingBid, "cancelBid::Bid must have a value greater than base price");
         require(msg.sender == _bidder, "cancelBid::Only bidder can cancel their own bids");
 
         address payable tempBidder;
@@ -928,7 +928,7 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver, ReentrancyGuard {
             tokenIdForAllBids[_tokenId][lengthForAllBids[_tokenId] - 1] = Bid(payable(0x0), 0 ether);
             for (uint256 i = lengthForAllBids[_tokenId] - 2 ; i >= 0 ; i--) {
                 if (tokenIdForAllBids[_tokenId][i].bidAmount != 0) {
-                    if (tokenIdForAllBids[_tokenId][i].bidAmount > 0.01 ether) {
+                    if (tokenIdForAllBids[_tokenId][i].bidAmount > startingBid) {
                         tokenIdForCurrentBid[_tokenId].currentBidder = tokenIdForAllBids[_tokenId][i].bidder;
                         tokenIdForCurrentBid[_tokenId].currentBidAmount = tokenIdForAllBids[_tokenId][i].bidAmount;
                         lengthForAllBids[_tokenId]--;
@@ -971,7 +971,7 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver, ReentrancyGuard {
         require(msg.sender == tempBidder, "claim::Only highest bidder can claim the NFT");
 
 
-        if (tokenIdForCurrentBid[_tokenId].currentBidAmount == 0.01 ether) {
+        if (tokenIdForCurrentBid[_tokenId].currentBidAmount == startingBid) {
             wordsNFT.transferFrom(address(this), tempWordInfo.minter, _tokenId);
 
             emit ClaimedAndNoBidsMade(tempWordInfo.minter, _tokenId);
@@ -1005,7 +1005,7 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver, ReentrancyGuard {
 
     function revertAllOtherBids(uint256 _tokenId) internal {
         for (uint256 i = 0 ; i < lengthForAllBids[_tokenId] - 1 ; i++) {
-            if (tokenIdForAllBids[_tokenId][i].bidAmount > 0.01 ether) {
+            if (tokenIdForAllBids[_tokenId][i].bidAmount > startingBid) {
                 require(WETH.transferFrom(address(this), tokenIdForAllBids[_tokenId][i].bidder, tokenIdForAllBids[_tokenId][i].bidAmount), "revertAllOtherBids::Error in WETH.transfer");
                 // sendValue(tokenIdForAllBids[_tokenId][i].bidder, tokenIdForAllBids[_tokenId][i].bidAmount);
             }
