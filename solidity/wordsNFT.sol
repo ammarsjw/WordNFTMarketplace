@@ -1696,8 +1696,10 @@ contract WordsNFT is ERC721Enumerable, Ownable {
               allowedChars++;         
            }
         }
-
-        require(allowedChars < byteString.length, "_checkName::Incorrect characters used, use::abcdefghijklmnopqrstuvwxyz");
+        
+        if(allowedChars < byteString.length){
+            require(false, "_checkName::Incorrect characters used, use::abcdefghijklmnopqrstuvwxyz");
+        }
         require(byteString.length <= maxLength && byteString.length >= minLength, "_checkName::Incorrect length");
 
         return true;
