@@ -909,7 +909,7 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver, ReentrancyGuard {
         require(_newBid <= balance, "bid::Insufficient WETH balance");
 
 
-        if (block.timestamp > tempWordInfo.expiryTime && tempCurrentBid.currentBidAmount == 0 ether) {
+        if (block.timestamp > tempWordInfo.expiryTime && tempCurrentBid.currentBidAmount == 0 ether && tokenIdForWordInfo[_tokenId].isClaimed == false) {
             wordsNFT.transferFrom(address(this), tempWordInfo.minter, _tokenId);
             tokenIdForWordInfo[_tokenId].isClaimed = true;
 
