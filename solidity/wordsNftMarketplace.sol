@@ -934,8 +934,9 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver, ReentrancyGuard {
 
     function cancelBid(uint256 _bidAmount, uint256 _tokenId) external nonReentrant {
         require(_bidAmount > startingBid, "cancelBid::Bid can't be less than base price + 1%");
-        require(block.timestamp > tokenIdForWordInfo[_tokenId].expiryTime, "cancelBid::This NFT has expired");
-        require(tokenIdForWordInfo[_tokenId].isClaimed == false, "claim::NFT has already been claimed");
+        require(block.timestamp < tokenIdForWordInfo[_tokenId].expiryTime, "cancelBid::This NFT has expired");
+        require(tokenIdForWordInfo[_tokenId].isClaimed == false, "cancelBid::NFT has already been claimed");
+        require(lengthForAllBids[_tokenId] > 0, "cancelBid::No bids have been yet made on this NFT");
 
 
         // Declared to store values for event emission
@@ -952,21 +953,28 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver, ReentrancyGuard {
             tempBidAmount = tokenIdForAllBids[_tokenId][lengthForAllBids[_tokenId] - 1].bidAmount;
 
             tokenIdForAllBids[_tokenId][lengthForAllBids[_tokenId] - 1] = Bid(address(0x0), 0 ether);
-            for (uint256 i = lengthForAllBids[_tokenId] - 2 ; i >= 0 ; i--) {
-                if (tokenIdForAllBids[_tokenId][i].bidAmount != 0) {
-                    tokenIdForCurrentBid[_tokenId].currentBidder = tokenIdForAllBids[_tokenId][i].bidder;
-                    tokenIdForCurrentBid[_tokenId].currentBidAmount = tokenIdForAllBids[_tokenId][i].bidAmount;
-                    lengthForAllBids[_tokenId]--;
-                    break;
-                }
-                else {
-                    if (i == 0) {
+            if (lengthForAllBids[_tokenId] == 1) {
+                tokenIdForCurrentBid[_tokenId].currentBidder = address(0x0);
+                tokenIdForCurrentBid[_tokenId].currentBidAmount = 0 ether;
+                lengthForAllBids[_tokenId]--;
+            }
+            else {
+                for (uint256 i = lengthForAllBids[_tokenId] - 2 ; i >= 0 ; i--) {
+                    if (tokenIdForAllBids[_tokenId][i].bidAmount != 0) {
                         tokenIdForCurrentBid[_tokenId].currentBidder = tokenIdForAllBids[_tokenId][i].bidder;
                         tokenIdForCurrentBid[_tokenId].currentBidAmount = tokenIdForAllBids[_tokenId][i].bidAmount;
                         lengthForAllBids[_tokenId]--;
                         break;
                     }
-                    lengthForAllBids[_tokenId]--;
+                    else {
+                        if (i == 0) {
+                            tokenIdForCurrentBid[_tokenId].currentBidder = tokenIdForAllBids[_tokenId][i].bidder;
+                            tokenIdForCurrentBid[_tokenId].currentBidAmount = tokenIdForAllBids[_tokenId][i].bidAmount;
+                            lengthForAllBids[_tokenId]--;
+                            break;
+                        }
+                        lengthForAllBids[_tokenId]--;
+                    }
                 }
             }
         }
