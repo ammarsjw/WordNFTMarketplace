@@ -781,18 +781,29 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver, ReentrancyGuard {
         uint256 _tokenId
     );
 
-    event ClaimedAndTransferred (
+    // When bids were made and expiry was caught outside of the claim function
+    event Expired (
         address indexed _bidder,
         address indexed _minter,
         uint256 _amount,
         uint256 _tokenId
     );
 
-    event Expired (
+    // When bids were made and expiry was caught inside of the claim function
+    event Claimed (
+        address indexed _bidder,
+        address indexed _minter,
+        uint256 _amount,
+        uint256 _tokenId
+    );
+
+    // When no bids were made and expiry is caught outside of the claim function
+    event ExpiredAndNoBidsMade (
         address indexed _minter,
         uint256 _tokenId
     );
 
+    // When no bids were made and expiry is caught inside of the claim function
     event ClaimedAndNoBidsMade (
         address indexed _minter,
         uint256 _tokenId
@@ -816,9 +827,9 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver, ReentrancyGuard {
         minimumBidIncreasePercentage = 1;
         
         startingBid = 0.01 ether;
-        bidExpiryTime = 24 hours;
-        // bidExpiryTime = 1 minutes;
-        bumpBidExpiryTime = 10 minutes;
+        // bidExpiryTime = 24 hours;
+        bidExpiryTime = 1 minutes;
+        bumpBidExpiryTime = 1 minutes;
 
         // WETH = IERC20(0x70c61BE68924dbb8DfBEc732772030874113345C); //Testnet
         // WETH = IERC20(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2); //Mainnet
@@ -881,30 +892,33 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver, ReentrancyGuard {
 
     function bid(uint256 _newBid, uint256 _tokenId) external nonReentrant {
         uint256 allowance = WETH.allowance(msg.sender, address(this));
+        uint256 balance = WETH.balanceOf(msg.sender);
         WordInfo memory tempWordInfo = tokenIdForWordInfo[_tokenId];
-        uint256 currentHighestBid = tokenIdForCurrentBid[_tokenId].currentBidAmount;
-        
-        
+        CurrentBid memory tempCurrentBid = tokenIdForCurrentBid[_tokenId];
         require(_newBid != 0, "bid::Bid cannot be 0 Wei");
-        if (currentHighestBid == 0) {
-            currentHighestBid = startingBid;
+        if (tempCurrentBid.currentBidAmount == 0) {
+            tempCurrentBid.currentBidAmount = startingBid;
             tokenIdForAllBids[_tokenId][lengthForAllBids[_tokenId]] = Bid(payable(0x0), startingBid);
             lengthForAllBids[_tokenId]++;
         }
-        require(_newBid > currentHighestBid.add(currentHighestBid.mul(minimumBidIncreasePercentage).div(100)), "bid::Bid must be higher than 1% of current highest bid");
+        require(_newBid > tempCurrentBid.currentBidAmount.add(tempCurrentBid.currentBidAmount.mul(minimumBidIncreasePercentage).div(100)), "bid::Bid must be higher than 1% of current highest bid");
         require(msg.sender != tempWordInfo.minter, "bid::Minter cannot bid");
         require(allowance != 0, "bid::Approved WETH must not be 0 Wei or Approval must be given");
         require(allowance >= _newBid, "bid::Approved WETH must be greater than or equal to the bid amount");
+        require(_newBid <= balance, "bid::Insufficient WETH balance");
 
 
-        if (block.timestamp > tempWordInfo.expiryTime) {
+        if (block.timestamp > tempWordInfo.expiryTime && tempCurrentBid.currentBidAmount == startingBid) {
             wordsNFT.transferFrom(address(this), tempWordInfo.minter, _tokenId);
 
-            emit Expired(tempWordInfo.minter, _tokenId);
+            emit ExpiredAndNoBidsMade(tempWordInfo.minter, _tokenId);
+        }
+        else if (block.timestamp > tempWordInfo.expiryTime) {
+            require(false, "bid::Bidding time has expired for this NFT");
+
+            emit Expired(tempCurrentBid.currentBidder, tempWordInfo.minter, tempCurrentBid.currentBidAmount, _tokenId);
         }
         else {
-            require(WETH.transferFrom(msg.sender, address(this), _newBid), "bid::Error in WETH.transferFrom");
-
             tokenIdForAllBids[_tokenId][lengthForAllBids[_tokenId]] = Bid(payable(msg.sender), _newBid);
             lengthForAllBids[_tokenId]++;
             tokenIdForCurrentBid[_tokenId] = CurrentBid(payable(msg.sender), _newBid);
@@ -918,6 +932,7 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver, ReentrancyGuard {
 
     function cancelBid(uint256 _bidAmount, uint256 _tokenId) external nonReentrant {
         require(_bidAmount > startingBid, "cancelBid::Bid can't be less than base price");
+        require(block.timestamp > tokenIdForWordInfo[_tokenId].expiryTime, "cancelBid::This NFT has expired");
 
         address payable tempBidder;
         uint256 tempBidAmount;
@@ -930,8 +945,6 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver, ReentrancyGuard {
 
             tempBidder = tokenIdForAllBids[_tokenId][lengthForAllBids[_tokenId] - 1].bidder;
             tempBidAmount = tokenIdForAllBids[_tokenId][lengthForAllBids[_tokenId] - 1].bidAmount;
-
-            require(WETH.transferFrom(address(this), tempBidder, tempBidAmount), "cancelBid::Error in WETH.transfer");
 
             tokenIdForAllBids[_tokenId][lengthForAllBids[_tokenId] - 1] = Bid(payable(0x0), 0 ether);
             for (uint256 i = lengthForAllBids[_tokenId] - 2 ; i > 0 ; i--) {
@@ -955,7 +968,6 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver, ReentrancyGuard {
                     tempBidder = tokenIdForAllBids[_tokenId][i].bidder;
                     tempBidAmount = tokenIdForAllBids[_tokenId][i].bidAmount;
 
-                    require(WETH.transferFrom(address(this), tempBidder, tempBidAmount), "cancelBid::Error in WETH.transfer");
                     tokenIdForAllBids[_tokenId][i] = Bid(payable(0x0), 0 ether);
                 }
             }
@@ -988,32 +1000,11 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver, ReentrancyGuard {
             uint256 marketplaceShare = tempBidAmount.div(dividend);
             uint256 minterShare = tempBidAmount.sub(marketplaceShare);
             require(marketplaceShare + minterShare == tempBidAmount, "bid::Div error checker failed");
-            require(WETH.transferFrom(address(this), marketplaceFeeWallet, marketplaceShare), "claim::Error in WETH.transfer");
-            require(WETH.transferFrom(address(this), tempWordInfo.minter, minterShare), "claim::Error in WETH.transfer");    
-            // sendValue(marketplaceFeeWallet, marketplaceShare);
-            // sendValue(tempWordInfo.minter, minterShare);
+            require(WETH.transferFrom(tempBidder, marketplaceFeeWallet, marketplaceShare), "claim::Error in WETH.transferFrom");
+            require(WETH.transferFrom(tempBidder, tempWordInfo.minter, minterShare), "claim::Error in WETH.transferFrom");    
         }
 
-        revertAllOtherBids(_tokenId);
-
-        emit ClaimedAndTransferred(tempBidder, tempWordInfo.minter, tempBidAmount, _tokenId);
-    }
-
-    // function sendValue(address payable recipient, uint256 amount) internal {
-    //     require(address(this).balance >= amount, "sendValue: insufficient balance");
-
-    //     // solhint-disable-next-line avoid-low-level-calls, avoid-call-value
-    //     (bool success, ) = recipient.call{ value: amount }("");
-    //     require(success, "sendValue: unable to send value, recipient may have reverted");
-    // }
-
-    function revertAllOtherBids(uint256 _tokenId) internal {
-        for (uint256 i = 0 ; i < lengthForAllBids[_tokenId] - 1 ; i++) {
-            if (tokenIdForAllBids[_tokenId][i].bidAmount > startingBid) {
-                require(WETH.transferFrom(address(this), tokenIdForAllBids[_tokenId][i].bidder, tokenIdForAllBids[_tokenId][i].bidAmount), "revertAllOtherBids::Error in WETH.transfer");
-                // sendValue(tokenIdForAllBids[_tokenId][i].bidder, tokenIdForAllBids[_tokenId][i].bidAmount);
-            }
-        }
+        emit Claimed(tempBidder, tempWordInfo.minter, tempBidAmount, _tokenId);
     }
     
     receive() external payable {
