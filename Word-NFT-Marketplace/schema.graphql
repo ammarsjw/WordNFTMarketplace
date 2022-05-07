@@ -19,8 +19,17 @@ type OwnershipTransferred @entity {
 type Expired @entity {
   id: ID!
   transaction: Transaction!
+  _bidder: Bytes!
   _minter: Bytes!
+  _amount: BigInt!
   _tokenId: BigInt!
+}
+
+type ExpiredAndNoBidsMade @entity {
+    id: ID!
+    transaction: Transaction!
+    _minter: Bytes!
+    _tokenId: BigInt!
 }
 
 type ERC721Received @entity {
@@ -32,7 +41,7 @@ type ERC721Received @entity {
   data: Bytes!
 }
 
-type ClaimedAndTransferred @entity {
+type Claimed @entity {
   id: ID!
   transaction: Transaction!
   _bidder: Bytes!

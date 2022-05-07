@@ -2,28 +2,30 @@ import {
   OwnershipTransferred as OwnershipTransferredEvent,
   Expired as ExpiredEvent,
   ERC721Received as ERC721ReceivedEvent,
-  ClaimedAndTransferred as ClaimedAndTransferredEvent,
+  Claimed as ClaimedEvent,
   ClaimedAndNoBidsMade as ClaimedAndNoBidsMadeEvent,
   ChangedWordsNFTAddress as ChangedWordsNFTAddressEvent,
   ChangedMarketplaceFeeWallet as ChangedMarketplaceFeeWalletEvent,
   ChangedFeePercentages as ChangedFeePercentagesEvent,
   BidMade as BidMadeEvent,
   BidCancelled as BidCancelledEvent,
-  AuctionMade as AuctionMadeEvent
+  AuctionMade as AuctionMadeEvent,
+  ExpiredAndNoBidsMade as ExpiredAndNoBidsMadeEvent,
 } from "../generated/WordsNFTMarketplace/WordsNFTMarketplace"
 
 import {
   OwnershipTransferred,
   Expired,
   ERC721Received,
-  ClaimedAndTransferred,
+  Claimed,
   ClaimedAndNoBidsMade,
   ChangedWordsNFTAddress,
   ChangedMarketplaceFeeWallet,
   ChangedFeePercentages,
   BidMade,
   BidCancelled,
-  AuctionMade
+  AuctionMade,
+  ExpiredAndNoBidsMade
 } from "../generated/schema"
 
 import { Bytes, BigInt } from '@graphprotocol/graph-ts'
@@ -43,7 +45,9 @@ export function handleExpired(event: ExpiredEvent): void {
   let transaction = loadOrCreateTransaction(event.transaction, event.block);
   let entity = new Expired(transaction.id)
   entity.transaction = transaction.id
+  entity._bidder = event.params._bidder
   entity._minter = event.params._minter
+  entity._amount = event.params._amount
   entity._tokenId = event.params._tokenId
   entity.save()
 }
@@ -59,9 +63,9 @@ export function handleERC721Received(event: ERC721ReceivedEvent): void {
   entity.save()
 }
 
-export function handleClaimedAndTransferred(event: ClaimedAndTransferredEvent): void {
+export function handleClaimed(event: ClaimedEvent): void {
   let transaction = loadOrCreateTransaction(event.transaction, event.block);
-  let entity = new ClaimedAndTransferred(transaction.id)
+  let entity = new Claimed(transaction.id)
   entity.transaction = transaction.id
   entity._bidder = event.params._bidder
   entity._minter = event.params._minter
@@ -132,5 +136,14 @@ export function handleAuctionMade(event: AuctionMadeEvent): void {
   entity._minter = event.params._minter
   entity._mintTime = event.params._mintTime
   entity._initialExpiryTime = event.params._initialExpiryTime
+  entity.save()
+}
+
+export function handleExpiredAndNoBidsMade(event: ExpiredAndNoBidsMadeEvent): void {
+  let transaction = loadOrCreateTransaction(event.transaction, event.block);
+  let entity = new ExpiredAndNoBidsMade(transaction.id)
+  entity.transaction = transaction.id
+  entity._minter = event.params._minter
+  entity._tokenId = event.params._tokenId
   entity.save()
 }

@@ -21,7 +21,8 @@ dataSources:
         - ChangedMarketplaceFeeWallet
         - ChangedWordsNFTAddress
         - ClaimedAndNoBidsMade
-        - ClaimedAndTransferred
+        - Claimed
+        - ExpiredAndNoBidsMade
         - ERC721Received
         - Expired
         - OwnershipTransferred
@@ -43,12 +44,14 @@ dataSources:
           handler: handleChangedWordsNFTAddress
         - event: ClaimedAndNoBidsMade(indexed address,uint256)
           handler: handleClaimedAndNoBidsMade
-        - event: ClaimedAndTransferred(indexed address,indexed address,uint256,uint256)
-          handler: handleClaimedAndTransferred
+        - event: Claimed(indexed address,indexed address,uint256,uint256)
+          handler: handleClaimed
         - event: ERC721Received(indexed address,indexed address,uint256,bytes)
           handler: handleERC721Received
-        - event: Expired(indexed address,uint256)
+        - event: Expired(indexed address,indexed address,uint256,uint256)
           handler: handleExpired
         - event: OwnershipTransferred(indexed address,indexed address)
           handler: handleOwnershipTransferred
+        - event: ExpiredAndNoBidsMade(indexed address,uint256)
+          handler: handleExpiredAndNoBidsMade
       file: ./src/mapping.ts

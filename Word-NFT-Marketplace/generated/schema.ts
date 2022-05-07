@@ -194,7 +194,9 @@ export class Expired extends Entity {
     this.set("id", Value.fromString(id));
 
     this.set("transaction", Value.fromString(""));
+    this.set("_bidder", Value.fromBytes(Bytes.empty()));
     this.set("_minter", Value.fromBytes(Bytes.empty()));
+    this.set("_amount", Value.fromBigInt(BigInt.zero()));
     this.set("_tokenId", Value.fromBigInt(BigInt.zero()));
   }
 
@@ -213,6 +215,90 @@ export class Expired extends Entity {
 
   static load(id: string): Expired | null {
     return changetype<Expired | null>(store.get("Expired", id));
+  }
+
+  get id(): string {
+    let value = this.get("id");
+    return value!.toString();
+  }
+
+  set id(value: string) {
+    this.set("id", Value.fromString(value));
+  }
+
+  get transaction(): string {
+    let value = this.get("transaction");
+    return value!.toString();
+  }
+
+  set transaction(value: string) {
+    this.set("transaction", Value.fromString(value));
+  }
+
+  get _bidder(): Bytes {
+    let value = this.get("_bidder");
+    return value!.toBytes();
+  }
+
+  set _bidder(value: Bytes) {
+    this.set("_bidder", Value.fromBytes(value));
+  }
+
+  get _minter(): Bytes {
+    let value = this.get("_minter");
+    return value!.toBytes();
+  }
+
+  set _minter(value: Bytes) {
+    this.set("_minter", Value.fromBytes(value));
+  }
+
+  get _amount(): BigInt {
+    let value = this.get("_amount");
+    return value!.toBigInt();
+  }
+
+  set _amount(value: BigInt) {
+    this.set("_amount", Value.fromBigInt(value));
+  }
+
+  get _tokenId(): BigInt {
+    let value = this.get("_tokenId");
+    return value!.toBigInt();
+  }
+
+  set _tokenId(value: BigInt) {
+    this.set("_tokenId", Value.fromBigInt(value));
+  }
+}
+
+export class ExpiredAndNoBidsMade extends Entity {
+  constructor(id: string) {
+    super();
+    this.set("id", Value.fromString(id));
+
+    this.set("transaction", Value.fromString(""));
+    this.set("_minter", Value.fromBytes(Bytes.empty()));
+    this.set("_tokenId", Value.fromBigInt(BigInt.zero()));
+  }
+
+  save(): void {
+    let id = this.get("id");
+    assert(id != null, "Cannot save ExpiredAndNoBidsMade entity without an ID");
+    if (id) {
+      assert(
+        id.kind == ValueKind.STRING,
+        "Cannot save ExpiredAndNoBidsMade entity with non-string ID. " +
+          'Considering using .toHex() to convert the "id" to a string.'
+      );
+      store.set("ExpiredAndNoBidsMade", id.toString(), this);
+    }
+  }
+
+  static load(id: string): ExpiredAndNoBidsMade | null {
+    return changetype<ExpiredAndNoBidsMade | null>(
+      store.get("ExpiredAndNoBidsMade", id)
+    );
   }
 
   get id(): string {
@@ -336,7 +422,7 @@ export class ERC721Received extends Entity {
   }
 }
 
-export class ClaimedAndTransferred extends Entity {
+export class Claimed extends Entity {
   constructor(id: string) {
     super();
     this.set("id", Value.fromString(id));
@@ -350,24 +436,19 @@ export class ClaimedAndTransferred extends Entity {
 
   save(): void {
     let id = this.get("id");
-    assert(
-      id != null,
-      "Cannot save ClaimedAndTransferred entity without an ID"
-    );
+    assert(id != null, "Cannot save Claimed entity without an ID");
     if (id) {
       assert(
         id.kind == ValueKind.STRING,
-        "Cannot save ClaimedAndTransferred entity with non-string ID. " +
+        "Cannot save Claimed entity with non-string ID. " +
           'Considering using .toHex() to convert the "id" to a string.'
       );
-      store.set("ClaimedAndTransferred", id.toString(), this);
+      store.set("Claimed", id.toString(), this);
     }
   }
 
-  static load(id: string): ClaimedAndTransferred | null {
-    return changetype<ClaimedAndTransferred | null>(
-      store.get("ClaimedAndTransferred", id)
-    );
+  static load(id: string): Claimed | null {
+    return changetype<Claimed | null>(store.get("Claimed", id));
   }
 
   get id(): string {

@@ -146,6 +146,36 @@ export class ChangedWordsNFTAddress__Params {
   }
 }
 
+export class Claimed extends ethereum.Event {
+  get params(): Claimed__Params {
+    return new Claimed__Params(this);
+  }
+}
+
+export class Claimed__Params {
+  _event: Claimed;
+
+  constructor(event: Claimed) {
+    this._event = event;
+  }
+
+  get _bidder(): Address {
+    return this._event.parameters[0].value.toAddress();
+  }
+
+  get _minter(): Address {
+    return this._event.parameters[1].value.toAddress();
+  }
+
+  get _amount(): BigInt {
+    return this._event.parameters[2].value.toBigInt();
+  }
+
+  get _tokenId(): BigInt {
+    return this._event.parameters[3].value.toBigInt();
+  }
+}
+
 export class ClaimedAndNoBidsMade extends ethereum.Event {
   get params(): ClaimedAndNoBidsMade__Params {
     return new ClaimedAndNoBidsMade__Params(this);
@@ -165,36 +195,6 @@ export class ClaimedAndNoBidsMade__Params {
 
   get _tokenId(): BigInt {
     return this._event.parameters[1].value.toBigInt();
-  }
-}
-
-export class ClaimedAndTransferred extends ethereum.Event {
-  get params(): ClaimedAndTransferred__Params {
-    return new ClaimedAndTransferred__Params(this);
-  }
-}
-
-export class ClaimedAndTransferred__Params {
-  _event: ClaimedAndTransferred;
-
-  constructor(event: ClaimedAndTransferred) {
-    this._event = event;
-  }
-
-  get _bidder(): Address {
-    return this._event.parameters[0].value.toAddress();
-  }
-
-  get _minter(): Address {
-    return this._event.parameters[1].value.toAddress();
-  }
-
-  get _amount(): BigInt {
-    return this._event.parameters[2].value.toBigInt();
-  }
-
-  get _tokenId(): BigInt {
-    return this._event.parameters[3].value.toBigInt();
   }
 }
 
@@ -238,6 +238,36 @@ export class Expired__Params {
   _event: Expired;
 
   constructor(event: Expired) {
+    this._event = event;
+  }
+
+  get _bidder(): Address {
+    return this._event.parameters[0].value.toAddress();
+  }
+
+  get _minter(): Address {
+    return this._event.parameters[1].value.toAddress();
+  }
+
+  get _amount(): BigInt {
+    return this._event.parameters[2].value.toBigInt();
+  }
+
+  get _tokenId(): BigInt {
+    return this._event.parameters[3].value.toBigInt();
+  }
+}
+
+export class ExpiredAndNoBidsMade extends ethereum.Event {
+  get params(): ExpiredAndNoBidsMade__Params {
+    return new ExpiredAndNoBidsMade__Params(this);
+  }
+}
+
+export class ExpiredAndNoBidsMade__Params {
+  _event: ExpiredAndNoBidsMade;
+
+  constructor(event: ExpiredAndNoBidsMade) {
     this._event = event;
   }
 
@@ -830,16 +860,12 @@ export class CancelBidCall__Inputs {
     this._call = call;
   }
 
-  get _bidder(): Address {
-    return this._call.inputValues[0].value.toAddress();
-  }
-
   get _bidAmount(): BigInt {
-    return this._call.inputValues[1].value.toBigInt();
+    return this._call.inputValues[0].value.toBigInt();
   }
 
   get _tokenId(): BigInt {
-    return this._call.inputValues[2].value.toBigInt();
+    return this._call.inputValues[1].value.toBigInt();
   }
 }
 
