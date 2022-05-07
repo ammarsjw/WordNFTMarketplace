@@ -868,11 +868,11 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver, ReentrancyGuard {
 
     // getters
 
-    function getWordsNFTContractAddress() public view onlyOwner returns (address) {
+    function getWordsNFTContractAddress() public view returns (address) {
         return address(wordsNFT);
     }
 
-    function getMarketplaceFeeWallet() public view onlyOwner returns (address payable) {
+    function getMarketplaceFeeWallet() public view returns (address payable) {
         return marketplaceFeeWallet;
     }
 
