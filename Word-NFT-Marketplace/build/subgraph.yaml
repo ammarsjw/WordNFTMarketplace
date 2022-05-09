@@ -6,9 +6,9 @@ dataSources:
     name: WordsNFTMarketplace
     network: rinkeby
     source:
-      address: "0x8354e8b945D6C35bD35615DD0277C4032cd0a67D"
+      address: "0x9fdD3d50782ff110972B4Dd18D7F54871A0Eb9Be"
       abi: WordsNFTMarketplace
-      startBlock: 10633627
+      startBlock: 10645592
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.5
@@ -21,7 +21,8 @@ dataSources:
         - ChangedMarketplaceFeeWallet
         - ChangedWordsNFTAddress
         - ClaimedAndNoBidsMade
-        - ClaimedAndTransferred
+        - Claimed
+        - ExpiredAndNoBidsMade
         - ERC721Received
         - Expired
         - OwnershipTransferred
@@ -43,12 +44,14 @@ dataSources:
           handler: handleChangedWordsNFTAddress
         - event: ClaimedAndNoBidsMade(indexed address,uint256)
           handler: handleClaimedAndNoBidsMade
-        - event: ClaimedAndTransferred(indexed address,indexed address,uint256,uint256)
-          handler: handleClaimedAndTransferred
+        - event: Claimed(indexed address,indexed address,uint256,uint256)
+          handler: handleClaimed
         - event: ERC721Received(indexed address,indexed address,uint256,bytes)
           handler: handleERC721Received
-        - event: Expired(indexed address,uint256)
+        - event: Expired(indexed address,indexed address,uint256,uint256)
           handler: handleExpired
         - event: OwnershipTransferred(indexed address,indexed address)
           handler: handleOwnershipTransferred
+        - event: ExpiredAndNoBidsMade(indexed address,uint256)
+          handler: handleExpiredAndNoBidsMade
       file: WordsNFTMarketplace/WordsNFTMarketplace.wasm
