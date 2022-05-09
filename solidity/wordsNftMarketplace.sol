@@ -1013,19 +1013,18 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver, ReentrancyGuard {
             emit ClaimedAndNoBidsMade(tempWordInfo.minter, _tokenId);
         }
         else {
+            uint256 marketplaceShare = tempCurrentBid.currentBidAmount.mul(marketplacePercentage).div(100);
+            uint256 minterShare = tempCurrentBid.currentBidAmount.sub(marketplaceShare);
+            require(marketplaceShare + minterShare == tempCurrentBid.currentBidAmount, "bid::Div error checker failed");
+
+            require(WETH.transferFrom(tempCurrentBid.currentBidder, marketplaceFeeWallet, marketplaceShare), "claim::Error in WETH.transferFrom");
+            require(WETH.transferFrom(tempCurrentBid.currentBidder, tempWordInfo.minter, minterShare), "claim::Error in WETH.transferFrom");
+
             wordsNFT.transferFrom(address(this), tempCurrentBid.currentBidder, _tokenId);
             tokenIdForWordInfo[_tokenId].isClaimed = true;
 
-            uint256 dividend = 100;
-            dividend = dividend.div(marketplacePercentage);
-            uint256 marketplaceShare = tempCurrentBid.currentBidAmount.div(dividend);
-            uint256 minterShare = tempCurrentBid.currentBidAmount.sub(marketplaceShare);
-            require(marketplaceShare + minterShare == tempCurrentBid.currentBidAmount, "bid::Div error checker failed");
-            require(WETH.transferFrom(tempCurrentBid.currentBidder, marketplaceFeeWallet, marketplaceShare), "claim::Error in WETH.transferFrom");
-            require(WETH.transferFrom(tempCurrentBid.currentBidder, tempWordInfo.minter, minterShare), "claim::Error in WETH.transferFrom");    
+            emit Claimed(tempCurrentBid.currentBidder, tempWordInfo.minter, tempCurrentBid.currentBidAmount, _tokenId);
         }
-
-        emit Claimed(tempCurrentBid.currentBidder, tempWordInfo.minter, tempCurrentBid.currentBidAmount, _tokenId);
     }
     
     receive() external payable {
