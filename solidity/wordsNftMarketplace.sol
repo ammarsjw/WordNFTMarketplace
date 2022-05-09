@@ -961,7 +961,7 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver, ReentrancyGuard {
                 tokenIdForCurrentBid[_tokenId].currentBidAmount = 0 ether;
             }
             else {
-                for (uint256 i = lengthForAllBids[_tokenId] - 2 ; i >= 0 ; i--) {
+                for (uint256 i = lengthForAllBids[_tokenId] - 1 ; i >= 0 ; i--) {
                     if (tokenIdForAllBids[_tokenId][i].bidAmount != 0) {
                         tokenIdForCurrentBid[_tokenId].currentBidder = tokenIdForAllBids[_tokenId][i].bidder;
                         tokenIdForCurrentBid[_tokenId].currentBidAmount = tokenIdForAllBids[_tokenId][i].bidAmount;
