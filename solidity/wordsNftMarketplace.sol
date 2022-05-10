@@ -1041,7 +1041,7 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver, ReentrancyGuard {
     }
 
     // for testing only
-    function changeExpiryTime(uint256 _tokenId) public onlyOwner {
+    function testChangeExpiryTime(uint256 _tokenId) public onlyOwner {
         tokenIdForWordInfo[_tokenId].expiryTime = block.timestamp + 1 minutes;
     }
 }
