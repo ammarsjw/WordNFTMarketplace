@@ -923,8 +923,6 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver, ReentrancyGuard {
             emit ExpiredAndNoBidsMade(tempWordInfo.minter, _tokenId);
         }
         else if (block.timestamp > tempWordInfo.expiryTime) {
-            require(false, "bid::Bidding time has expired for this NFT");
-
             emit Expired(tempCurrentBid.currentBidder, tempWordInfo.minter, tempCurrentBid.currentBidAmount, _tokenId);
         }
         else {
@@ -1040,5 +1038,10 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver, ReentrancyGuard {
     modifier onlyContract {
         require(msg.sender == address(wordsNFT), "onlyContract::Only WordsNFT Contract can call this function");
         _;
+    }
+
+    // for testing only
+    function changeExpiryTime(uint256 _tokenId) public onlyOwner {
+        tokenIdForWordInfo[_tokenId].expiryTime = block.timestamp + 1 minutes;
     }
 }
