@@ -136,6 +136,7 @@ export function handleAuctionMade(event: AuctionMadeEvent): void {
   entity._minter = event.params._minter
   entity._mintTime = event.params._mintTime
   entity._initialExpiryTime = event.params._initialExpiryTime
+  entity._tokenId = event.params._tokenId
   entity.save()
 }
 

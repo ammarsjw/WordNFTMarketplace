@@ -98,4 +98,5 @@ type AuctionMade @entity {
   _minter: Bytes!
   _mintTime: BigInt!
   _initialExpiryTime: BigInt!
+  _tokenId: BigInt!
 }

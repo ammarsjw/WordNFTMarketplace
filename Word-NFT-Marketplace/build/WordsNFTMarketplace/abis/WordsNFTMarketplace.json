@@ -24,6 +24,12 @@
         "internalType": "uint256",
         "name": "_initialExpiryTime",
         "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "_tokenId",
+        "type": "uint256"
       }
     ],
     "name": "AuctionMade",
@@ -625,7 +631,7 @@
     "name": "tokenIdForAllBids",
     "outputs": [
       {
-        "internalType": "address payable",
+        "internalType": "address",
         "name": "bidder",
         "type": "address"
       },
@@ -649,7 +655,7 @@
     "name": "tokenIdForCurrentBid",
     "outputs": [
       {
-        "internalType": "address payable",
+        "internalType": "address",
         "name": "currentBidder",
         "type": "address"
       },
@@ -686,6 +692,11 @@
         "internalType": "uint256",
         "name": "expiryTime",
         "type": "uint256"
+      },
+      {
+        "internalType": "bool",
+        "name": "isClaimed",
+        "type": "bool"
       }
     ],
     "stateMutability": "view",

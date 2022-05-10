@@ -6,9 +6,9 @@ dataSources:
     name: WordsNFTMarketplace
     network: rinkeby
     source:
-      address: "0x9fdD3d50782ff110972B4Dd18D7F54871A0Eb9Be"
+      address: "0xB01C4a9C1f1E76d248BE3Dd1805cDbA357c46e4B"
       abi: WordsNFTMarketplace
-      startBlock: 10645592
+      startBlock: 10650520
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.5
@@ -30,7 +30,7 @@ dataSources:
         - name: WordsNFTMarketplace
           file: WordsNFTMarketplace/abis/WordsNFTMarketplace.json
       eventHandlers:
-        - event: AuctionMade(indexed address,uint256,uint256)
+        - event: AuctionMade(indexed address,uint256,uint256,uint256)
           handler: handleAuctionMade
         - event: BidCancelled(indexed address,uint256,uint256)
           handler: handleBidCancelled

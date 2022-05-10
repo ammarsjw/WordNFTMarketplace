@@ -916,6 +916,7 @@ export class AuctionMade extends Entity {
     this.set("_minter", Value.fromBytes(Bytes.empty()));
     this.set("_mintTime", Value.fromBigInt(BigInt.zero()));
     this.set("_initialExpiryTime", Value.fromBigInt(BigInt.zero()));
+    this.set("_tokenId", Value.fromBigInt(BigInt.zero()));
   }
 
   save(): void {
@@ -978,5 +979,14 @@ export class AuctionMade extends Entity {
 
   set _initialExpiryTime(value: BigInt) {
     this.set("_initialExpiryTime", Value.fromBigInt(value));
+  }
+
+  get _tokenId(): BigInt {
+    let value = this.get("_tokenId");
+    return value!.toBigInt();
+  }
+
+  set _tokenId(value: BigInt) {
+    this.set("_tokenId", Value.fromBigInt(value));
   }
 }
