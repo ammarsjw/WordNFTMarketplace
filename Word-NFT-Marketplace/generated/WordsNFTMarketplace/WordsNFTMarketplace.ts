@@ -34,6 +34,10 @@ export class AuctionMade__Params {
   get _initialExpiryTime(): BigInt {
     return this._event.parameters[2].value.toBigInt();
   }
+
+  get _tokenId(): BigInt {
+    return this._event.parameters[3].value.toBigInt();
+  }
 }
 
 export class BidCancelled extends ethereum.Event {
@@ -340,11 +344,18 @@ export class WordsNFTMarketplace__tokenIdForWordInfoResult {
   value0: Address;
   value1: BigInt;
   value2: BigInt;
+  value3: boolean;
 
-  constructor(value0: Address, value1: BigInt, value2: BigInt) {
+  constructor(
+    value0: Address,
+    value1: BigInt,
+    value2: BigInt,
+    value3: boolean
+  ) {
     this.value0 = value0;
     this.value1 = value1;
     this.value2 = value2;
+    this.value3 = value3;
   }
 
   toMap(): TypedMap<string, ethereum.Value> {
@@ -352,6 +363,7 @@ export class WordsNFTMarketplace__tokenIdForWordInfoResult {
     map.set("value0", ethereum.Value.fromAddress(this.value0));
     map.set("value1", ethereum.Value.fromUnsignedBigInt(this.value1));
     map.set("value2", ethereum.Value.fromUnsignedBigInt(this.value2));
+    map.set("value3", ethereum.Value.fromBoolean(this.value3));
     return map;
   }
 }
@@ -735,14 +747,15 @@ export class WordsNFTMarketplace extends ethereum.SmartContract {
   ): WordsNFTMarketplace__tokenIdForWordInfoResult {
     let result = super.call(
       "tokenIdForWordInfo",
-      "tokenIdForWordInfo(uint256):(address,uint256,uint256)",
+      "tokenIdForWordInfo(uint256):(address,uint256,uint256,bool)",
       [ethereum.Value.fromUnsignedBigInt(param0)]
     );
 
     return new WordsNFTMarketplace__tokenIdForWordInfoResult(
       result[0].toAddress(),
       result[1].toBigInt(),
-      result[2].toBigInt()
+      result[2].toBigInt(),
+      result[3].toBoolean()
     );
   }
 
@@ -751,7 +764,7 @@ export class WordsNFTMarketplace extends ethereum.SmartContract {
   ): ethereum.CallResult<WordsNFTMarketplace__tokenIdForWordInfoResult> {
     let result = super.tryCall(
       "tokenIdForWordInfo",
-      "tokenIdForWordInfo(uint256):(address,uint256,uint256)",
+      "tokenIdForWordInfo(uint256):(address,uint256,uint256,bool)",
       [ethereum.Value.fromUnsignedBigInt(param0)]
     );
     if (result.reverted) {
@@ -762,7 +775,8 @@ export class WordsNFTMarketplace extends ethereum.SmartContract {
       new WordsNFTMarketplace__tokenIdForWordInfoResult(
         value[0].toAddress(),
         value[1].toBigInt(),
-        value[2].toBigInt()
+        value[2].toBigInt(),
+        value[3].toBoolean()
       )
     );
   }
