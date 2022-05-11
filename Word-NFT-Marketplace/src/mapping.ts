@@ -137,7 +137,7 @@ export function handleBidCancelled(event: BidCancelledEvent): void {
     bidToRemove._tokenId = new BigInt(0)
     bidToRemove._amount = new BigInt(0)
     bidToRemove.save()
-    // bidToRemove.unset(id)
+    bidToRemove.unset(id)
   }
 }
 
