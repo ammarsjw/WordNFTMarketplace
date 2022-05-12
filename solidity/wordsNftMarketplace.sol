@@ -745,9 +745,9 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver, ReentrancyGuard {
     mapping(uint256 => uint256) public lengthForAllBids;
     mapping(uint256 => CurrentBid) public tokenIdForCurrentBid;
 
-    IERC20 public WETH;
+    IERC20 WETH;
 
-    IWordsNFT public wordsNFT;
+    IWordsNFT wordsNFT;
 
     // Events
 
@@ -910,7 +910,6 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver, ReentrancyGuard {
         else {
             require(_newBid > tempCurrentBid.currentBidAmount.add(tempCurrentBid.currentBidAmount.mul(minimumBidIncreasePercentage).div(100)), "bid::Bid must be higher than 1% of current highest bid");
         }
-        require(msg.sender != tempWordInfo.minter, "bid::Minter cannot bid");
         require(allowance != 0, "bid::Approved WETH must not be 0 Wei or Approval must be given");
         require(allowance >= _newBid, "bid::Approved WETH must be greater than or equal to the bid amount");
         require(_newBid <= balance, "bid::Insufficient WETH balance");
@@ -1004,30 +1003,62 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver, ReentrancyGuard {
 
     function claim(uint256 _tokenId) external nonReentrant {
         WordInfo memory tempWordInfo = tokenIdForWordInfo[_tokenId];
-        CurrentBid memory tempCurrentBid = tokenIdForCurrentBid[_tokenId];
         require(tempWordInfo.isClaimed == false, "claim::NFT has already been claimed");
         require(block.timestamp >= tempWordInfo.expiryTime, "claim::NFT can only be claimed once bidding time has expired");
-        require(msg.sender == tempWordInfo.minter, "claim::Only minter can claim");
 
 
         if (tokenIdForCurrentBid[_tokenId].currentBidAmount == 0 ether) {
             wordsNFT.transferFrom(address(this), tempWordInfo.minter, _tokenId);
+            
             tokenIdForWordInfo[_tokenId].isClaimed = true;
 
             emit ClaimedAndNoBidsMade(tempWordInfo.minter, _tokenId);
         }
         else {
-            uint256 marketplaceShare = tempCurrentBid.currentBidAmount.mul(marketplacePercentage).div(100);
-            uint256 minterShare = tempCurrentBid.currentBidAmount.sub(marketplaceShare);
-            require(marketplaceShare + minterShare == tempCurrentBid.currentBidAmount, "bid::Div error checker failed");
+            uint256 marketplaceShare;
+            uint256 minterShare;
 
-            require(WETH.transferFrom(tempCurrentBid.currentBidder, marketplaceFeeWallet, marketplaceShare), "claim::Error in WETH.transferFrom");
-            require(WETH.transferFrom(tempCurrentBid.currentBidder, tempWordInfo.minter, minterShare), "claim::Error in WETH.transferFrom");
+            uint256 balance;
+            uint256 allowance;
 
-            wordsNFT.transferFrom(address(this), tempCurrentBid.currentBidder, _tokenId);
-            tokenIdForWordInfo[_tokenId].isClaimed = true;
+            bool transactionStatus = false;
+            for(uint256 i = lengthForAllBids[_tokenId] - 1 ; i >= 0 ; i--){
 
-            emit Claimed(tempCurrentBid.currentBidder, tempWordInfo.minter, tempCurrentBid.currentBidAmount, _tokenId);
+                if (tokenIdForAllBids[_tokenId][i].bidAmount != 0 ether) {
+                    balance = WETH.balanceOf(tokenIdForAllBids[_tokenId][i].bidder);
+                    allowance = WETH.allowance(tokenIdForAllBids[_tokenId][i].bidder, address(this));
+
+                    if (balance >= tokenIdForAllBids[_tokenId][i].bidAmount && allowance >= tokenIdForAllBids[_tokenId][i].bidAmount) {
+                        marketplaceShare = tokenIdForAllBids[_tokenId][i].bidAmount.mul(marketplacePercentage).div(100);
+                        minterShare = tokenIdForAllBids[_tokenId][i].bidAmount.sub(marketplaceShare);
+
+                        WETH.transferFrom(tokenIdForAllBids[_tokenId][i].bidder, marketplaceFeeWallet, marketplaceShare);
+                        WETH.transferFrom(tokenIdForAllBids[_tokenId][i].bidder, tempWordInfo.minter, minterShare);
+
+                        wordsNFT.transferFrom(address(this), tokenIdForAllBids[_tokenId][i].bidder, _tokenId);
+                        
+                        transactionStatus = true;
+                        tokenIdForWordInfo[_tokenId].isClaimed = true;
+
+                        emit Claimed(tokenIdForAllBids[_tokenId][i].bidder, tempWordInfo.minter, tokenIdForAllBids[_tokenId][i].bidAmount, _tokenId);
+
+                        break;
+                    }
+                
+                }
+
+                if (i == 0) {
+                    break;
+                }
+            
+            }
+            if (!transactionStatus) {
+                wordsNFT.transferFrom(address(this), tempWordInfo.minter, _tokenId);
+            
+                tokenIdForWordInfo[_tokenId].isClaimed = true;
+
+                emit ClaimedAndNoBidsMade(tempWordInfo.minter, _tokenId);
+            }
         }
     }
     
