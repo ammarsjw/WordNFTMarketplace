@@ -905,7 +905,7 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver, ReentrancyGuard {
         require(tempWordInfo.isClaimed == false, "claim::NFT has already been claimed");
         require(_newBid != 0, "bid::Bid cannot be 0 Wei");
         if (tempCurrentBid.currentBidAmount == 0) {
-            require(_newBid > startingBid.add(startingBid.mul(minimumBidIncreasePercentage).div(100)), "bid::Bid must be higher than 1% of base price");
+            require(_newBid >= startingBid, "bid::Bid must be higher than or equal to the base price (0.01 Ether)");
         }
         else {
             require(_newBid > tempCurrentBid.currentBidAmount.add(tempCurrentBid.currentBidAmount.mul(minimumBidIncreasePercentage).div(100)), "bid::Bid must be higher than 1% of current highest bid");
