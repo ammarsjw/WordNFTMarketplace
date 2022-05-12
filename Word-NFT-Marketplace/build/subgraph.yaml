@@ -6,9 +6,9 @@ dataSources:
     name: WordsNFTMarketplace
     network: rinkeby
     source:
-      address: "0xd30C7e970463c9997d69b9F8F2B881809Bad76a4"
+      address: "0xDF3593Bc89e6D433dA44a19e12C3243c2c886644"
       abi: WordsNFTMarketplace
-      startBlock: 10651538
+      startBlock: 10661799
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.5
@@ -28,7 +28,7 @@ dataSources:
         - OwnershipTransferred
       abis:
         - name: WordsNFTMarketplace
-          file: WordsNFTMarketplace/abis/WordsNFTMarketplace.json
+          file: WordsNFTMarketplace\abis\WordsNFTMarketplace.json
       eventHandlers:
         - event: AuctionMade(indexed address,uint256,uint256,uint256)
           handler: handleAuctionMade
@@ -54,4 +54,4 @@ dataSources:
           handler: handleOwnershipTransferred
         - event: ExpiredAndNoBidsMade(indexed address,uint256)
           handler: handleExpiredAndNoBidsMade
-      file: WordsNFTMarketplace/WordsNFTMarketplace.wasm
+      file: WordsNFTMarketplace\WordsNFTMarketplace.wasm

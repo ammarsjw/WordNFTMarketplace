@@ -6,9 +6,9 @@ dataSources:
     name: WordsNFT
     network: rinkeby
     source:
-      address: "0xAA2c05980911E06f0CF3F1B0Dcd09b503645075D"
+      address: "0x4362c7b07262F5f2ad484bb7701Dcf75C4A59Bbf"
       abi: WordsNFT
-      startBlock: 10651534
+      startBlock: 10661793
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.5
@@ -23,7 +23,7 @@ dataSources:
         - Transfer
       abis:
         - name: WordsNFT
-          file: WordsNFT/abis/WordsNFT.json
+          file: WordsNFT\abis\WordsNFT.json
       eventHandlers:
         - event: Approval(indexed address,indexed address,indexed uint256)
           handler: handleApproval
@@ -39,4 +39,4 @@ dataSources:
           handler: handleSetMarketplaceContractAddress
         - event: Transfer(indexed address,indexed address,indexed uint256)
           handler: handleTransfer
-      file: WordsNFT/WordsNFT.wasm
+      file: WordsNFT\WordsNFT.wasm

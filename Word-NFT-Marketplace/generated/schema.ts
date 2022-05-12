@@ -30,7 +30,8 @@ export class Transaction extends Entity {
     if (id) {
       assert(
         id.kind == ValueKind.STRING,
-        `Entities of type Transaction must have an ID of type String but the id '${id.displayData()}' is of type ${id.displayKind()}`
+        "Cannot save Transaction entity with non-string ID. " +
+          'Considering using .toHex() to convert the "id" to a string.'
       );
       store.set("Transaction", id.toString(), this);
     }
@@ -137,7 +138,8 @@ export class OwnershipTransferred extends Entity {
     if (id) {
       assert(
         id.kind == ValueKind.STRING,
-        `Entities of type OwnershipTransferred must have an ID of type String but the id '${id.displayData()}' is of type ${id.displayKind()}`
+        "Cannot save OwnershipTransferred entity with non-string ID. " +
+          'Considering using .toHex() to convert the "id" to a string.'
       );
       store.set("OwnershipTransferred", id.toString(), this);
     }
@@ -204,7 +206,8 @@ export class Expired extends Entity {
     if (id) {
       assert(
         id.kind == ValueKind.STRING,
-        `Entities of type Expired must have an ID of type String but the id '${id.displayData()}' is of type ${id.displayKind()}`
+        "Cannot save Expired entity with non-string ID. " +
+          'Considering using .toHex() to convert the "id" to a string.'
       );
       store.set("Expired", id.toString(), this);
     }
@@ -285,7 +288,8 @@ export class ExpiredAndNoBidsMade extends Entity {
     if (id) {
       assert(
         id.kind == ValueKind.STRING,
-        `Entities of type ExpiredAndNoBidsMade must have an ID of type String but the id '${id.displayData()}' is of type ${id.displayKind()}`
+        "Cannot save ExpiredAndNoBidsMade entity with non-string ID. " +
+          'Considering using .toHex() to convert the "id" to a string.'
       );
       store.set("ExpiredAndNoBidsMade", id.toString(), this);
     }
@@ -352,7 +356,8 @@ export class ERC721Received extends Entity {
     if (id) {
       assert(
         id.kind == ValueKind.STRING,
-        `Entities of type ERC721Received must have an ID of type String but the id '${id.displayData()}' is of type ${id.displayKind()}`
+        "Cannot save ERC721Received entity with non-string ID. " +
+          'Considering using .toHex() to convert the "id" to a string.'
       );
       store.set("ERC721Received", id.toString(), this);
     }
@@ -435,7 +440,8 @@ export class Claimed extends Entity {
     if (id) {
       assert(
         id.kind == ValueKind.STRING,
-        `Entities of type Claimed must have an ID of type String but the id '${id.displayData()}' is of type ${id.displayKind()}`
+        "Cannot save Claimed entity with non-string ID. " +
+          'Considering using .toHex() to convert the "id" to a string.'
       );
       store.set("Claimed", id.toString(), this);
     }
@@ -516,7 +522,8 @@ export class ClaimedAndNoBidsMade extends Entity {
     if (id) {
       assert(
         id.kind == ValueKind.STRING,
-        `Entities of type ClaimedAndNoBidsMade must have an ID of type String but the id '${id.displayData()}' is of type ${id.displayKind()}`
+        "Cannot save ClaimedAndNoBidsMade entity with non-string ID. " +
+          'Considering using .toHex() to convert the "id" to a string.'
       );
       store.set("ClaimedAndNoBidsMade", id.toString(), this);
     }
@@ -583,7 +590,8 @@ export class ChangedWordsNFTAddress extends Entity {
     if (id) {
       assert(
         id.kind == ValueKind.STRING,
-        `Entities of type ChangedWordsNFTAddress must have an ID of type String but the id '${id.displayData()}' is of type ${id.displayKind()}`
+        "Cannot save ChangedWordsNFTAddress entity with non-string ID. " +
+          'Considering using .toHex() to convert the "id" to a string.'
       );
       store.set("ChangedWordsNFTAddress", id.toString(), this);
     }
@@ -641,7 +649,8 @@ export class ChangedMarketplaceFeeWallet extends Entity {
     if (id) {
       assert(
         id.kind == ValueKind.STRING,
-        `Entities of type ChangedMarketplaceFeeWallet must have an ID of type String but the id '${id.displayData()}' is of type ${id.displayKind()}`
+        "Cannot save ChangedMarketplaceFeeWallet entity with non-string ID. " +
+          'Considering using .toHex() to convert the "id" to a string.'
       );
       store.set("ChangedMarketplaceFeeWallet", id.toString(), this);
     }
@@ -700,7 +709,8 @@ export class ChangedFeePercentages extends Entity {
     if (id) {
       assert(
         id.kind == ValueKind.STRING,
-        `Entities of type ChangedFeePercentages must have an ID of type String but the id '${id.displayData()}' is of type ${id.displayKind()}`
+        "Cannot save ChangedFeePercentages entity with non-string ID. " +
+          'Considering using .toHex() to convert the "id" to a string.'
       );
       store.set("ChangedFeePercentages", id.toString(), this);
     }
@@ -766,7 +776,8 @@ export class BidMade extends Entity {
     if (id) {
       assert(
         id.kind == ValueKind.STRING,
-        `Entities of type BidMade must have an ID of type String but the id '${id.displayData()}' is of type ${id.displayKind()}`
+        "Cannot save BidMade entity with non-string ID. " +
+          'Considering using .toHex() to convert the "id" to a string.'
       );
       store.set("BidMade", id.toString(), this);
     }
@@ -839,7 +850,8 @@ export class BidCancelled extends Entity {
     if (id) {
       assert(
         id.kind == ValueKind.STRING,
-        `Entities of type BidCancelled must have an ID of type String but the id '${id.displayData()}' is of type ${id.displayKind()}`
+        "Cannot save BidCancelled entity with non-string ID. " +
+          'Considering using .toHex() to convert the "id" to a string.'
       );
       store.set("BidCancelled", id.toString(), this);
     }
@@ -913,7 +925,8 @@ export class AuctionMade extends Entity {
     if (id) {
       assert(
         id.kind == ValueKind.STRING,
-        `Entities of type AuctionMade must have an ID of type String but the id '${id.displayData()}' is of type ${id.displayKind()}`
+        "Cannot save AuctionMade entity with non-string ID. " +
+          'Considering using .toHex() to convert the "id" to a string.'
       );
       store.set("AuctionMade", id.toString(), this);
     }
