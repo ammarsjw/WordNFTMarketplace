@@ -937,7 +937,7 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver, ReentrancyGuard {
     }
 
     function cancelBid(uint256 _bidAmount, uint256 _tokenId) external nonReentrant {
-        require(_bidAmount > startingBid, "cancelBid::Bid can't be less than base price + 1%");
+        require(_bidAmount >= startingBid, "cancelBid::Bid can't be less than base price");
         require(block.timestamp < tokenIdForWordInfo[_tokenId].expiryTime, "cancelBid::This NFT has expired");
         require(tokenIdForWordInfo[_tokenId].isClaimed == false, "cancelBid::NFT has already been claimed");
         require(lengthForAllBids[_tokenId] > 0, "cancelBid::No bids have been yet made on this NFT");
@@ -1073,6 +1073,6 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver, ReentrancyGuard {
 
     // for testing only
     function testChangeExpiryTime(uint256 _tokenId) public {
-        tokenIdForWordInfo[_tokenId].expiryTime = block.timestamp + 15 minutes;
+        tokenIdForWordInfo[_tokenId].expiryTime = block.timestamp + 10 seconds;
     }
 }
