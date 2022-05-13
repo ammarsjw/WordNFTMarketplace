@@ -719,17 +719,17 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver, ReentrancyGuard {
 
     uint8 public minimumBidIncreasePercentage;
 
-    uint256 public startingBid;
+    uint256 public basePrice;
     uint256 public bidExpiryTime;
     uint256 public bumpBidExpiryTime;
 
     struct CurrentBid {
-        address currentBidder;
+        address payable currentBidder;
         uint256 currentBidAmount;
     }
 
     struct Bid {
-        address bidder;
+        address payable bidder;
         uint256 bidAmount;
     }
 
@@ -744,8 +744,6 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver, ReentrancyGuard {
     mapping(uint256 => mapping(uint256 => Bid)) public tokenIdForAllBids;
     mapping(uint256 => uint256) public lengthForAllBids;
     mapping(uint256 => CurrentBid) public tokenIdForCurrentBid;
-
-    IERC20 WETH;
 
     IWordsNFT wordsNFT;
 
@@ -828,7 +826,7 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver, ReentrancyGuard {
 
         minimumBidIncreasePercentage = 1;
         
-        startingBid = 0.01 ether;
+        basePrice = 0.01 ether;
         bidExpiryTime = 24 hours;
         // bidExpiryTime = 1 minutes;
         bumpBidExpiryTime = 10 minutes;
@@ -843,10 +841,6 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver, ReentrancyGuard {
         wordsNFT = IWordsNFT(_originContract);
 
         emit ChangedWordsNFTAddress(address(wordsNFT));
-    }
-    
-    function setWETHContractAddress(address _stablecoinContractAddress) public onlyOwner {
-        WETH = IERC20(_stablecoinContractAddress);
     }
 
     function setMarketplaceFeeWallet(address payable _marketplaceFeeWallet) public onlyOwner {
@@ -897,22 +891,18 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver, ReentrancyGuard {
         return IERC721Receiver.onERC721Received.selector;
     }
 
-    function bid(uint256 _newBid, uint256 _tokenId) external nonReentrant {
-        uint256 allowance = WETH.allowance(msg.sender, address(this));
-        uint256 balance = WETH.balanceOf(msg.sender);
+    function bid(uint256 _newBid, uint256 _tokenId) external payable nonReentrant {
         WordInfo memory tempWordInfo = tokenIdForWordInfo[_tokenId];
         CurrentBid memory tempCurrentBid = tokenIdForCurrentBid[_tokenId];
         require(tempWordInfo.isClaimed == false, "claim::NFT has already been claimed");
+        require(msg.value == _newBid, "bid::Mismatch between sent ETH and stated ETH");
         require(_newBid != 0, "bid::Bid cannot be 0 Wei");
         if (tempCurrentBid.currentBidAmount == 0) {
-            require(_newBid >= startingBid, "bid::Bid must be higher than or equal to the base price (0.01 Ether)");
+            require(_newBid >= basePrice, "bid::Bid must be higher than or equal to the base price (0.01 Ether)");
         }
         else {
             require(_newBid > tempCurrentBid.currentBidAmount.add(tempCurrentBid.currentBidAmount.mul(minimumBidIncreasePercentage).div(100)), "bid::Bid must be higher than 1% of current highest bid");
         }
-        require(allowance != 0, "bid::Approved WETH must not be 0 Wei or Approval must be given");
-        require(allowance >= _newBid, "bid::Approved WETH must be greater than or equal to the bid amount");
-        require(_newBid <= balance, "bid::Insufficient WETH balance");
 
 
         if (block.timestamp > tempWordInfo.expiryTime && tempCurrentBid.currentBidAmount == 0 ether) {
@@ -925,9 +915,9 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver, ReentrancyGuard {
             emit Expired(tempCurrentBid.currentBidder, tempWordInfo.minter, tempCurrentBid.currentBidAmount, _tokenId);
         }
         else {
-            tokenIdForAllBids[_tokenId][lengthForAllBids[_tokenId]] = Bid(msg.sender, _newBid);
+            tokenIdForAllBids[_tokenId][lengthForAllBids[_tokenId]] = Bid(payable(msg.sender), _newBid);
             lengthForAllBids[_tokenId]++;
-            tokenIdForCurrentBid[_tokenId] = CurrentBid(msg.sender, _newBid);
+            tokenIdForCurrentBid[_tokenId] = CurrentBid(payable(msg.sender), _newBid);
 
             tempWordInfo.expiryTime += bumpBidExpiryTime;
             tokenIdForWordInfo[_tokenId] = WordInfo(tempWordInfo.minter, tempWordInfo.mintTime, tempWordInfo.expiryTime, tempWordInfo.isClaimed);
@@ -937,14 +927,14 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver, ReentrancyGuard {
     }
 
     function cancelBid(uint256 _bidAmount, uint256 _tokenId) external nonReentrant {
-        require(_bidAmount >= startingBid, "cancelBid::Bid can't be less than base price");
+        require(_bidAmount >= basePrice, "cancelBid::Bid can't be less than base price");
         require(block.timestamp < tokenIdForWordInfo[_tokenId].expiryTime, "cancelBid::This NFT has expired");
         require(tokenIdForWordInfo[_tokenId].isClaimed == false, "cancelBid::NFT has already been claimed");
         require(lengthForAllBids[_tokenId] > 0, "cancelBid::No bids have been yet made on this NFT");
 
 
         // Declared to store values for event emission
-        address tempBidder;
+        address payable tempBidder;
         uint256 tempBidAmount;
 
         bool isExistingBid = false;
@@ -956,11 +946,13 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver, ReentrancyGuard {
             tempBidder = tokenIdForAllBids[_tokenId][lengthForAllBids[_tokenId] - 1].bidder;
             tempBidAmount = tokenIdForAllBids[_tokenId][lengthForAllBids[_tokenId] - 1].bidAmount;
 
-            tokenIdForAllBids[_tokenId][lengthForAllBids[_tokenId] - 1] = Bid(address(0x0), 0 ether);
+            sendValue(tempBidder, tempBidAmount);
+
+            tokenIdForAllBids[_tokenId][lengthForAllBids[_tokenId] - 1] = Bid(payable(0x0), 0 ether);
             lengthForAllBids[_tokenId]--;
 
             if (lengthForAllBids[_tokenId] == 0) {
-                tokenIdForCurrentBid[_tokenId].currentBidder = address(0x0);
+                tokenIdForCurrentBid[_tokenId].currentBidder = payable(0x0);
                 tokenIdForCurrentBid[_tokenId].currentBidAmount = 0 ether;
             }
             else {
@@ -991,7 +983,9 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver, ReentrancyGuard {
                     tempBidder = tokenIdForAllBids[_tokenId][i].bidder;
                     tempBidAmount = tokenIdForAllBids[_tokenId][i].bidAmount;
 
-                    tokenIdForAllBids[_tokenId][i] = Bid(address(0x0), 0 ether);
+                    sendValue(tempBidder, tempBidAmount);
+
+                    tokenIdForAllBids[_tokenId][i] = Bid(payable(0x0), 0 ether);
                 }
             }
         }
@@ -1003,6 +997,7 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver, ReentrancyGuard {
 
     function claim(uint256 _tokenId) external nonReentrant {
         WordInfo memory tempWordInfo = tokenIdForWordInfo[_tokenId];
+        CurrentBid memory tempCurrentBid = tokenIdForCurrentBid[_tokenId];
         require(tempWordInfo.isClaimed == false, "claim::NFT has already been claimed");
         require(block.timestamp >= tempWordInfo.expiryTime, "claim::NFT can only be claimed once bidding time has expired");
 
@@ -1015,51 +1010,36 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver, ReentrancyGuard {
             emit ClaimedAndNoBidsMade(tempWordInfo.minter, _tokenId);
         }
         else {
-            uint256 marketplaceShare;
-            uint256 minterShare;
+            uint256 marketplaceShare = tempCurrentBid.currentBidAmount.mul(marketplacePercentage).div(100);
+            uint256 minterShare = tempCurrentBid.currentBidAmount.sub(marketplaceShare);
 
-            uint256 balance;
-            uint256 allowance;
+            sendValue(marketplaceFeeWallet, marketplaceShare);
+            sendValue(tempWordInfo.minter, minterShare);
 
-            bool transactionStatus = false;
-            for(uint256 i = lengthForAllBids[_tokenId] - 1 ; i >= 0 ; i--){
+            transferBackAllOtherBids(_tokenId);
 
-                if (tokenIdForAllBids[_tokenId][i].bidAmount != 0 ether) {
-                    balance = WETH.balanceOf(tokenIdForAllBids[_tokenId][i].bidder);
-                    allowance = WETH.allowance(tokenIdForAllBids[_tokenId][i].bidder, address(this));
-
-                    if (balance >= tokenIdForAllBids[_tokenId][i].bidAmount && allowance >= tokenIdForAllBids[_tokenId][i].bidAmount) {
-                        marketplaceShare = tokenIdForAllBids[_tokenId][i].bidAmount.mul(marketplacePercentage).div(100);
-                        minterShare = tokenIdForAllBids[_tokenId][i].bidAmount.sub(marketplaceShare);
-
-                        WETH.transferFrom(tokenIdForAllBids[_tokenId][i].bidder, marketplaceFeeWallet, marketplaceShare);
-                        WETH.transferFrom(tokenIdForAllBids[_tokenId][i].bidder, tempWordInfo.minter, minterShare);
-
-                        wordsNFT.transferFrom(address(this), tokenIdForAllBids[_tokenId][i].bidder, _tokenId);
-                        
-                        transactionStatus = true;
-                        tokenIdForWordInfo[_tokenId].isClaimed = true;
-
-                        emit Claimed(tokenIdForAllBids[_tokenId][i].bidder, tempWordInfo.minter, tokenIdForAllBids[_tokenId][i].bidAmount, _tokenId);
-
-                        break;
-                    }
-                
-                }
-
-                if (i == 0) {
-                    break;
-                }
+            wordsNFT.transferFrom(address(this), tempCurrentBid.currentBidder, _tokenId);
             
-            }
-            if (!transactionStatus) {
-                wordsNFT.transferFrom(address(this), tempWordInfo.minter, _tokenId);
-            
-                tokenIdForWordInfo[_tokenId].isClaimed = true;
+            tokenIdForWordInfo[_tokenId].isClaimed = true;
 
-                emit ClaimedAndNoBidsMade(tempWordInfo.minter, _tokenId);
+            emit Claimed(tempCurrentBid.currentBidder, tempWordInfo.minter, tempCurrentBid.currentBidAmount, _tokenId);
+        }
+    }
+
+    function transferBackAllOtherBids(uint256 _tokenId) internal {
+        for (uint256 i = 0 ; i < lengthForAllBids[_tokenId] - 1 ; i++) {
+            if (tokenIdForAllBids[_tokenId][i].bidAmount >= basePrice) {
+                sendValue(tokenIdForAllBids[_tokenId][i].bidder, tokenIdForAllBids[_tokenId][i].bidAmount);
             }
         }
+    }
+
+    function sendValue(address payable recipient, uint256 amount) internal {
+        require(address(this).balance >= amount, "sendValue: insufficient balance");
+
+        // solhint-disable-next-line avoid-low-level-calls, avoid-call-value
+        (bool success, ) = recipient.call{ value: amount }("");
+        require(success, "sendValue: unable to send value, recipient may have reverted");
     }
     
     receive() external payable {
@@ -1072,7 +1052,21 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver, ReentrancyGuard {
     }
 
     // for testing only
-    function testChangeExpiryTime(uint256 _tokenId) public {
-        tokenIdForWordInfo[_tokenId].expiryTime = block.timestamp + 10 seconds;
+
+    // changes bid expiry time of a given NFT depending on the scenario given
+    // 1 -> expiry time will be 10 SECONDS from current time
+    // 2 -> expiry time will be 1 MINUTE from current time
+    // 3 -> expiry time will be 15 MINUTES from current time
+    function testChangeExpiryTime(uint256 _tokenId, uint8 _scenario) public {
+        require(1 <= _scenario && _scenario <= 3, "testChangeExpiryTime::Choose 1, 2 or 3 for _scenario. Read code comments for further details");
+        if (_scenario == 1) {
+            tokenIdForWordInfo[_tokenId].expiryTime = block.timestamp + 10 seconds;
+        }
+        else if (_scenario == 2) {
+            tokenIdForWordInfo[_tokenId].expiryTime = block.timestamp + 1 minutes;
+        }
+        else if (_scenario == 3) {
+            tokenIdForWordInfo[_tokenId].expiryTime = block.timestamp + 15 minutes;
+        }
     }
 }
