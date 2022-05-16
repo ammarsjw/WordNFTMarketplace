@@ -111,7 +111,8 @@ export function handleChangedFeePercentages(event: ChangedFeePercentagesEvent): 
 
 export function handleBidMade(event: BidMadeEvent): void {
   let transaction = loadOrCreateTransaction(event.transaction, event.block);
-  let id = event.params._bidder.toHexString().concat(event.params._tokenId.toString()).concat(event.params._amount.toString());
+  // let id = event.params._bidder.toHexString().concat(event.params._tokenId.toString()).concat(event.params._amount.toString());
+  let id = event.params._bidder.toHexString().concat(event.params._tokenId.toString());
   let entity = new BidMade(id);
   entity.transaction = transaction.id
   entity._bidder = event.params._bidder
@@ -130,7 +131,8 @@ export function handleBidCancelled(event: BidCancelledEvent): void {
   entity._tokenId = event.params._tokenId
   entity.save()
 
-  id = event.params._bidder.toHexString().concat(event.params._tokenId.toString()).concat(event.params._amount.toString());
+  // id = event.params._bidder.toHexString().concat(event.params._tokenId.toString()).concat(event.params._amount.toString());
+  id = event.params._bidder.toHexString().concat(event.params._tokenId.toString());
   let bidToRemove = BidMade.load(id);
   if (bidToRemove) {
     bidToRemove._bidder = new Bytes(0)
