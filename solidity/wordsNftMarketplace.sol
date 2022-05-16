@@ -746,7 +746,7 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver, ReentrancyGuard {
     }
 
     mapping(uint256 => WordInfo) public tokenIdForWordInfo;
-    mapping(address => mapping(uint256 => Balance)) addressForBalance;
+    mapping(address => mapping(uint256 => Balance)) public addressForBalance;
     mapping(uint256 => mapping(uint256 => Bid)) public tokenIdForAllBids;
     mapping(uint256 => uint256) public lengthForAllBids;
     mapping(uint256 => CurrentBid) public tokenIdForCurrentBid;
@@ -901,6 +901,7 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver, ReentrancyGuard {
         WordInfo memory tempWordInfo = tokenIdForWordInfo[_tokenId];
         CurrentBid memory tempCurrentBid = tokenIdForCurrentBid[_tokenId];
         Balance memory tempBalance = addressForBalance[msg.sender][_tokenId];
+        _newBid += tempBalance.totalBalance;
         require(tempWordInfo.isClaimed == false, "claim::NFT has already been claimed");
         require(msg.value == _newBid, "bid::Mismatch between sent ETH and stated ETH");
         require(_newBid != 0, "bid::Bid cannot be 0 Wei");
@@ -926,7 +927,6 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver, ReentrancyGuard {
                 addressForBalance[msg.sender][_tokenId] = Balance(_newBid, lengthForAllBids[_tokenId]);
             }
             else {
-                _newBid += tempBalance.totalBalance;
                 tokenIdForAllBids[_tokenId][tempBalance.bidIndex] = Bid(payable(0x0), 0 ether);
                 addressForBalance[msg.sender][_tokenId] = Balance(_newBid, lengthForAllBids[_tokenId]);
             }
