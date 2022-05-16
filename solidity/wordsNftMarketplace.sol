@@ -897,19 +897,18 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver, ReentrancyGuard {
         return IERC721Receiver.onERC721Received.selector;
     }
 
-    function bid(uint256 _newBid, uint256 _tokenId) external payable nonReentrant {
+    function bid(uint256 _tokenId) external payable nonReentrant {
         WordInfo memory tempWordInfo = tokenIdForWordInfo[_tokenId];
         CurrentBid memory tempCurrentBid = tokenIdForCurrentBid[_tokenId];
         Balance memory tempBalance = addressForBalance[msg.sender][_tokenId];
-        _newBid += tempBalance.totalBalance;
+        uint256 newBid = msg.value + tempBalance.totalBalance;
         require(tempWordInfo.isClaimed == false, "claim::NFT has already been claimed");
-        require(msg.value == _newBid, "bid::Mismatch between sent ETH and stated ETH");
-        require(_newBid != 0, "bid::Bid cannot be 0 Wei");
+        require(msg.value != 0, "bid::Added bid cannot be 0 Wei");
         if (tempCurrentBid.currentBidAmount == 0) {
-            require(_newBid >= basePrice, "bid::Bid must be higher than or equal to the base price (0.01 Ether)");
+            require(newBid >= basePrice, "bid::Bid must be higher than or equal to the base price (0.01 Ether)");
         }
         else {
-            require(_newBid > tempCurrentBid.currentBidAmount.add(tempCurrentBid.currentBidAmount.mul(minimumBidIncreasePercentage).div(100)), "bid::Bid must be higher than 1% of current highest bid");
+            require(newBid > tempCurrentBid.currentBidAmount.add(tempCurrentBid.currentBidAmount.mul(minimumBidIncreasePercentage).div(100)), "bid::Bid must be higher than 1% of current highest bid");
         }
 
 
@@ -924,20 +923,20 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver, ReentrancyGuard {
         }
         else {
             if (tempBalance.totalBalance == 0 ether) {
-                addressForBalance[msg.sender][_tokenId] = Balance(_newBid, lengthForAllBids[_tokenId]);
+                addressForBalance[msg.sender][_tokenId] = Balance(newBid, lengthForAllBids[_tokenId]);
             }
             else {
                 tokenIdForAllBids[_tokenId][tempBalance.bidIndex] = Bid(payable(0x0), 0 ether);
-                addressForBalance[msg.sender][_tokenId] = Balance(_newBid, lengthForAllBids[_tokenId]);
+                addressForBalance[msg.sender][_tokenId] = Balance(newBid, lengthForAllBids[_tokenId]);
             }
-            tokenIdForAllBids[_tokenId][lengthForAllBids[_tokenId]] = Bid(payable(msg.sender), _newBid);
+            tokenIdForAllBids[_tokenId][lengthForAllBids[_tokenId]] = Bid(payable(msg.sender), newBid);
             lengthForAllBids[_tokenId]++;
-            tokenIdForCurrentBid[_tokenId] = CurrentBid(payable(msg.sender), _newBid);
+            tokenIdForCurrentBid[_tokenId] = CurrentBid(payable(msg.sender), newBid);
 
             tempWordInfo.expiryTime += bumpBidExpiryTime;
             tokenIdForWordInfo[_tokenId] = WordInfo(tempWordInfo.minter, tempWordInfo.mintTime, tempWordInfo.expiryTime, tempWordInfo.isClaimed);
 
-            emit BidMade(msg.sender, _newBid, _tokenId);
+            emit BidMade(msg.sender, newBid, _tokenId);
         }
     }
 
