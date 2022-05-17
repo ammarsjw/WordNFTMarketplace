@@ -6,9 +6,9 @@ dataSources:
     name: WordsNFT
     network: rinkeby
     source:
-      address: "0x9ECB2881aE7699014484Ee1c8714e2358F47B26f"
+      address: "0x7ebF7da2502377217a267EC06839c92A5C5530c4"
       abi: WordsNFT
-      startBlock: 10691467
+      startBlock: 10691842
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.5

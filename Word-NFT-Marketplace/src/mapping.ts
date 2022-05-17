@@ -139,8 +139,8 @@ export function handleBidClaimed(event: BidClaimedEvent): void {
   let bidToChange = BidMade.load(id);
   if (bidToChange) {
     bidToChange._bidder = event.params._bidder
-    bidToChange._tokenId = event.params._amount
-    bidToChange._amount = event.params._tokenId
+    bidToChange._amount = event.params._amount
+    bidToChange._tokenId = event.params._tokenId
     bidToChange._totalBalance = event.params._totalBalance
     bidToChange.save()
   }
