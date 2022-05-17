@@ -1072,9 +1072,10 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver, ReentrancyGuard {
 
                 sendValue(payable(msg.sender), addressForBalance[msg.sender][_tokenId].totalBalance);
 
-                emit BidClaimed(tempCurrentBid.currentBidder, tempCurrentBid.currentBidAmount, _tokenId, addressForBalance[msg.sender][_tokenId].totalBalance);
-
+                uint256 tempBidAmount = addressForBalance[msg.sender][_tokenId].totalBalance;
                 addressForBalance[msg.sender][_tokenId] = Balance(0, 0);
+
+                emit BidClaimed(msg.sender, tempBidAmount, _tokenId, addressForBalance[msg.sender][_tokenId].totalBalance);
             }
         }
     }
