@@ -82,6 +82,16 @@ type BidMade @entity {
   _bidder: Bytes!
   _amount: BigInt!
   _tokenId: BigInt!
+  _totalBalance: BigInt!
+}
+
+type BidClaimed @entity {
+  id: ID!
+  transaction: Transaction!
+  _bidder: Bytes!
+  _amount: BigInt!
+  _tokenId: BigInt!
+  _totalBalance: BigInt!
 }
 
 type BidCancelled @entity {

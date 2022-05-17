@@ -66,6 +66,36 @@ export class BidCancelled__Params {
   }
 }
 
+export class BidClaimed extends ethereum.Event {
+  get params(): BidClaimed__Params {
+    return new BidClaimed__Params(this);
+  }
+}
+
+export class BidClaimed__Params {
+  _event: BidClaimed;
+
+  constructor(event: BidClaimed) {
+    this._event = event;
+  }
+
+  get _bidder(): Address {
+    return this._event.parameters[0].value.toAddress();
+  }
+
+  get _amount(): BigInt {
+    return this._event.parameters[1].value.toBigInt();
+  }
+
+  get _tokenId(): BigInt {
+    return this._event.parameters[2].value.toBigInt();
+  }
+
+  get _totalBalance(): BigInt {
+    return this._event.parameters[3].value.toBigInt();
+  }
+}
+
 export class BidMade extends ethereum.Event {
   get params(): BidMade__Params {
     return new BidMade__Params(this);
@@ -89,6 +119,10 @@ export class BidMade__Params {
 
   get _tokenId(): BigInt {
     return this._event.parameters[2].value.toBigInt();
+  }
+
+  get _totalBalance(): BigInt {
+    return this._event.parameters[3].value.toBigInt();
   }
 }
 
@@ -306,6 +340,23 @@ export class OwnershipTransferred__Params {
   }
 }
 
+export class WordsNFTMarketplace__addressForBalanceResult {
+  value0: BigInt;
+  value1: BigInt;
+
+  constructor(value0: BigInt, value1: BigInt) {
+    this.value0 = value0;
+    this.value1 = value1;
+  }
+
+  toMap(): TypedMap<string, ethereum.Value> {
+    let map = new TypedMap<string, ethereum.Value>();
+    map.set("value0", ethereum.Value.fromUnsignedBigInt(this.value0));
+    map.set("value1", ethereum.Value.fromUnsignedBigInt(this.value1));
+    return map;
+  }
+}
+
 export class WordsNFTMarketplace__tokenIdForAllBidsResult {
   value0: Address;
   value1: BigInt;
@@ -373,19 +424,62 @@ export class WordsNFTMarketplace extends ethereum.SmartContract {
     return new WordsNFTMarketplace("WordsNFTMarketplace", address);
   }
 
-  WETH(): Address {
-    let result = super.call("WETH", "WETH():(address)", []);
+  addressForBalance(
+    param0: Address,
+    param1: BigInt
+  ): WordsNFTMarketplace__addressForBalanceResult {
+    let result = super.call(
+      "addressForBalance",
+      "addressForBalance(address,uint256):(uint256,uint256)",
+      [
+        ethereum.Value.fromAddress(param0),
+        ethereum.Value.fromUnsignedBigInt(param1)
+      ]
+    );
 
-    return result[0].toAddress();
+    return new WordsNFTMarketplace__addressForBalanceResult(
+      result[0].toBigInt(),
+      result[1].toBigInt()
+    );
   }
 
-  try_WETH(): ethereum.CallResult<Address> {
-    let result = super.tryCall("WETH", "WETH():(address)", []);
+  try_addressForBalance(
+    param0: Address,
+    param1: BigInt
+  ): ethereum.CallResult<WordsNFTMarketplace__addressForBalanceResult> {
+    let result = super.tryCall(
+      "addressForBalance",
+      "addressForBalance(address,uint256):(uint256,uint256)",
+      [
+        ethereum.Value.fromAddress(param0),
+        ethereum.Value.fromUnsignedBigInt(param1)
+      ]
+    );
     if (result.reverted) {
       return new ethereum.CallResult();
     }
     let value = result.value;
-    return ethereum.CallResult.fromValue(value[0].toAddress());
+    return ethereum.CallResult.fromValue(
+      new WordsNFTMarketplace__addressForBalanceResult(
+        value[0].toBigInt(),
+        value[1].toBigInt()
+      )
+    );
+  }
+
+  basePrice(): BigInt {
+    let result = super.call("basePrice", "basePrice():(uint256)", []);
+
+    return result[0].toBigInt();
+  }
+
+  try_basePrice(): ethereum.CallResult<BigInt> {
+    let result = super.tryCall("basePrice", "basePrice():(uint256)", []);
+    if (result.reverted) {
+      return new ethereum.CallResult();
+    }
+    let value = result.value;
+    return ethereum.CallResult.fromValue(value[0].toBigInt());
   }
 
   bidExpiryTime(): BigInt {
@@ -649,21 +743,6 @@ export class WordsNFTMarketplace extends ethereum.SmartContract {
     return ethereum.CallResult.fromValue(value[0].toAddress());
   }
 
-  startingBid(): BigInt {
-    let result = super.call("startingBid", "startingBid():(uint256)", []);
-
-    return result[0].toBigInt();
-  }
-
-  try_startingBid(): ethereum.CallResult<BigInt> {
-    let result = super.tryCall("startingBid", "startingBid():(uint256)", []);
-    if (result.reverted) {
-      return new ethereum.CallResult();
-    }
-    let value = result.value;
-    return ethereum.CallResult.fromValue(value[0].toBigInt());
-  }
-
   tokenIdForAllBids(
     param0: BigInt,
     param1: BigInt
@@ -780,21 +859,6 @@ export class WordsNFTMarketplace extends ethereum.SmartContract {
       )
     );
   }
-
-  wordsNFT(): Address {
-    let result = super.call("wordsNFT", "wordsNFT():(address)", []);
-
-    return result[0].toAddress();
-  }
-
-  try_wordsNFT(): ethereum.CallResult<Address> {
-    let result = super.tryCall("wordsNFT", "wordsNFT():(address)", []);
-    if (result.reverted) {
-      return new ethereum.CallResult();
-    }
-    let value = result.value;
-    return ethereum.CallResult.fromValue(value[0].toAddress());
-  }
 }
 
 export class ConstructorCall extends ethereum.Call {
@@ -840,12 +904,8 @@ export class BidCall__Inputs {
     this._call = call;
   }
 
-  get _newBid(): BigInt {
-    return this._call.inputValues[0].value.toBigInt();
-  }
-
   get _tokenId(): BigInt {
-    return this._call.inputValues[1].value.toBigInt();
+    return this._call.inputValues[0].value.toBigInt();
   }
 }
 
@@ -1117,36 +1177,6 @@ export class SetOnAuctionCall__Outputs {
   }
 }
 
-export class SetWETHContractAddressCall extends ethereum.Call {
-  get inputs(): SetWETHContractAddressCall__Inputs {
-    return new SetWETHContractAddressCall__Inputs(this);
-  }
-
-  get outputs(): SetWETHContractAddressCall__Outputs {
-    return new SetWETHContractAddressCall__Outputs(this);
-  }
-}
-
-export class SetWETHContractAddressCall__Inputs {
-  _call: SetWETHContractAddressCall;
-
-  constructor(call: SetWETHContractAddressCall) {
-    this._call = call;
-  }
-
-  get _stablecoinContractAddress(): Address {
-    return this._call.inputValues[0].value.toAddress();
-  }
-}
-
-export class SetWETHContractAddressCall__Outputs {
-  _call: SetWETHContractAddressCall;
-
-  constructor(call: SetWETHContractAddressCall) {
-    this._call = call;
-  }
-}
-
 export class SetWordsNFTContractAddressCall extends ethereum.Call {
   get inputs(): SetWordsNFTContractAddressCall__Inputs {
     return new SetWordsNFTContractAddressCall__Inputs(this);
@@ -1173,6 +1203,40 @@ export class SetWordsNFTContractAddressCall__Outputs {
   _call: SetWordsNFTContractAddressCall;
 
   constructor(call: SetWordsNFTContractAddressCall) {
+    this._call = call;
+  }
+}
+
+export class TestChangeExpiryTimeCall extends ethereum.Call {
+  get inputs(): TestChangeExpiryTimeCall__Inputs {
+    return new TestChangeExpiryTimeCall__Inputs(this);
+  }
+
+  get outputs(): TestChangeExpiryTimeCall__Outputs {
+    return new TestChangeExpiryTimeCall__Outputs(this);
+  }
+}
+
+export class TestChangeExpiryTimeCall__Inputs {
+  _call: TestChangeExpiryTimeCall;
+
+  constructor(call: TestChangeExpiryTimeCall) {
+    this._call = call;
+  }
+
+  get _tokenId(): BigInt {
+    return this._call.inputValues[0].value.toBigInt();
+  }
+
+  get _scenario(): i32 {
+    return this._call.inputValues[1].value.toI32();
+  }
+}
+
+export class TestChangeExpiryTimeCall__Outputs {
+  _call: TestChangeExpiryTimeCall;
+
+  constructor(call: TestChangeExpiryTimeCall) {
     this._call = call;
   }
 }

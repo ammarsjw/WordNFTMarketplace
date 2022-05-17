@@ -6,9 +6,9 @@ dataSources:
     name: WordsNFTMarketplace
     network: rinkeby
     source:
-      address: "0x39C0cC94994f919a4A7e82F6001C79Fc0b00ddCb"
+      address: "0xD33c2883A65433aA552671A4CD946e4E07cd0E70"
       abi: WordsNFTMarketplace
-      startBlock: 10685755
+      startBlock: 10691466
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.5
@@ -17,6 +17,7 @@ dataSources:
         - AuctionMade
         - BidCancelled
         - BidMade
+        - BidClaimed
         - ChangedFeePercentages
         - ChangedMarketplaceFeeWallet
         - ChangedWordsNFTAddress
@@ -34,8 +35,10 @@ dataSources:
           handler: handleAuctionMade
         - event: BidCancelled(indexed address,uint256,uint256)
           handler: handleBidCancelled
-        - event: BidMade(indexed address,uint256,uint256)
+        - event: BidMade(indexed address,uint256,uint256,uint256)
           handler: handleBidMade
+        - event: BidClaimed(indexed address,uint256,uint256,uint256)
+          handler: handleBidClaimed
         - event: ChangedFeePercentages(uint8,uint8)
           handler: handleChangedFeePercentages
         - event: ChangedMarketplaceFeeWallet(indexed address)

@@ -80,6 +80,43 @@
 				"internalType": "uint256",
 				"name": "_tokenId",
 				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "_totalBalance",
+				"type": "uint256"
+			}
+		],
+		"name": "BidClaimed",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "_bidder",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "_amount",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "_tokenId",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "_totalBalance",
+				"type": "uint256"
 			}
 		],
 		"name": "BidMade",
@@ -281,13 +318,42 @@
 		"type": "event"
 	},
 	{
-		"inputs": [],
-		"name": "WETH",
-		"outputs": [
+		"inputs": [
 			{
-				"internalType": "contract IERC20",
+				"internalType": "address",
 				"name": "",
 				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "addressForBalance",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "totalBalance",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "bidIndex",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "basePrice",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
 			}
 		],
 		"stateMutability": "view",
@@ -297,18 +363,13 @@
 		"inputs": [
 			{
 				"internalType": "uint256",
-				"name": "_newBid",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
 				"name": "_tokenId",
 				"type": "uint256"
 			}
 		],
 		"name": "bid",
 		"outputs": [],
-		"stateMutability": "nonpayable",
+		"stateMutability": "payable",
 		"type": "function"
 	},
 	{
@@ -580,19 +641,6 @@
 		"inputs": [
 			{
 				"internalType": "address",
-				"name": "_stablecoinContractAddress",
-				"type": "address"
-			}
-		],
-		"name": "setWETHContractAddress",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
 				"name": "_originContract",
 				"type": "address"
 			}
@@ -603,16 +651,21 @@
 		"type": "function"
 	},
 	{
-		"inputs": [],
-		"name": "startingBid",
-		"outputs": [
+		"inputs": [
 			{
 				"internalType": "uint256",
-				"name": "",
+				"name": "_tokenId",
 				"type": "uint256"
+			},
+			{
+				"internalType": "uint8",
+				"name": "_scenario",
+				"type": "uint8"
 			}
 		],
-		"stateMutability": "view",
+		"name": "testChangeExpiryTime",
+		"outputs": [],
+		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{
@@ -631,7 +684,7 @@
 		"name": "tokenIdForAllBids",
 		"outputs": [
 			{
-				"internalType": "address",
+				"internalType": "address payable",
 				"name": "bidder",
 				"type": "address"
 			},
@@ -655,7 +708,7 @@
 		"name": "tokenIdForCurrentBid",
 		"outputs": [
 			{
-				"internalType": "address",
+				"internalType": "address payable",
 				"name": "currentBidder",
 				"type": "address"
 			},
@@ -713,19 +766,6 @@
 		"name": "transferOwnership",
 		"outputs": [],
 		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "wordsNFT",
-		"outputs": [
-			{
-				"internalType": "contract IWordsNFT",
-				"name": "",
-				"type": "address"
-			}
-		],
-		"stateMutability": "view",
 		"type": "function"
 	},
 	{

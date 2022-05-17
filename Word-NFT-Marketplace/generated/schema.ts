@@ -768,6 +768,7 @@ export class BidMade extends Entity {
     this.set("_bidder", Value.fromBytes(Bytes.empty()));
     this.set("_amount", Value.fromBigInt(BigInt.zero()));
     this.set("_tokenId", Value.fromBigInt(BigInt.zero()));
+    this.set("_totalBalance", Value.fromBigInt(BigInt.zero()));
   }
 
   save(): void {
@@ -830,6 +831,99 @@ export class BidMade extends Entity {
 
   set _tokenId(value: BigInt) {
     this.set("_tokenId", Value.fromBigInt(value));
+  }
+
+  get _totalBalance(): BigInt {
+    let value = this.get("_totalBalance");
+    return value!.toBigInt();
+  }
+
+  set _totalBalance(value: BigInt) {
+    this.set("_totalBalance", Value.fromBigInt(value));
+  }
+}
+
+export class BidClaimed extends Entity {
+  constructor(id: string) {
+    super();
+    this.set("id", Value.fromString(id));
+
+    this.set("transaction", Value.fromString(""));
+    this.set("_bidder", Value.fromBytes(Bytes.empty()));
+    this.set("_amount", Value.fromBigInt(BigInt.zero()));
+    this.set("_tokenId", Value.fromBigInt(BigInt.zero()));
+    this.set("_totalBalance", Value.fromBigInt(BigInt.zero()));
+  }
+
+  save(): void {
+    let id = this.get("id");
+    assert(id != null, "Cannot save BidClaimed entity without an ID");
+    if (id) {
+      assert(
+        id.kind == ValueKind.STRING,
+        "Cannot save BidClaimed entity with non-string ID. " +
+          'Considering using .toHex() to convert the "id" to a string.'
+      );
+      store.set("BidClaimed", id.toString(), this);
+    }
+  }
+
+  static load(id: string): BidClaimed | null {
+    return changetype<BidClaimed | null>(store.get("BidClaimed", id));
+  }
+
+  get id(): string {
+    let value = this.get("id");
+    return value!.toString();
+  }
+
+  set id(value: string) {
+    this.set("id", Value.fromString(value));
+  }
+
+  get transaction(): string {
+    let value = this.get("transaction");
+    return value!.toString();
+  }
+
+  set transaction(value: string) {
+    this.set("transaction", Value.fromString(value));
+  }
+
+  get _bidder(): Bytes {
+    let value = this.get("_bidder");
+    return value!.toBytes();
+  }
+
+  set _bidder(value: Bytes) {
+    this.set("_bidder", Value.fromBytes(value));
+  }
+
+  get _amount(): BigInt {
+    let value = this.get("_amount");
+    return value!.toBigInt();
+  }
+
+  set _amount(value: BigInt) {
+    this.set("_amount", Value.fromBigInt(value));
+  }
+
+  get _tokenId(): BigInt {
+    let value = this.get("_tokenId");
+    return value!.toBigInt();
+  }
+
+  set _tokenId(value: BigInt) {
+    this.set("_tokenId", Value.fromBigInt(value));
+  }
+
+  get _totalBalance(): BigInt {
+    let value = this.get("_totalBalance");
+    return value!.toBigInt();
+  }
+
+  set _totalBalance(value: BigInt) {
+    this.set("_totalBalance", Value.fromBigInt(value));
   }
 }
 

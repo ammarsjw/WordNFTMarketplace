@@ -8,6 +8,7 @@ import {
   ChangedMarketplaceFeeWallet as ChangedMarketplaceFeeWalletEvent,
   ChangedFeePercentages as ChangedFeePercentagesEvent,
   BidMade as BidMadeEvent,
+  BidClaimed as BidClaimedEvent,
   BidCancelled as BidCancelledEvent,
   AuctionMade as AuctionMadeEvent,
   ExpiredAndNoBidsMade as ExpiredAndNoBidsMadeEvent,
@@ -23,6 +24,7 @@ import {
   ChangedMarketplaceFeeWallet,
   ChangedFeePercentages,
   BidMade,
+  BidClaimed,
   BidCancelled,
   AuctionMade,
   ExpiredAndNoBidsMade
@@ -118,7 +120,30 @@ export function handleBidMade(event: BidMadeEvent): void {
   entity._bidder = event.params._bidder
   entity._amount = event.params._amount
   entity._tokenId = event.params._tokenId
+  entity._totalBalance = event.params._totalBalance
   entity.save()
+}
+
+export function handleBidClaimed(event: BidClaimedEvent): void {
+  let transaction = loadOrCreateTransaction(event.transaction, event.block);
+  let id = event.params._bidder.toHexString().concat(event.params._tokenId.toString());
+  let entity = new BidMade(id);
+  entity.transaction = transaction.id
+  entity._bidder = event.params._bidder
+  entity._amount = event.params._amount
+  entity._tokenId = event.params._tokenId
+  entity._totalBalance = event.params._totalBalance
+  entity.save()
+
+  id = event.params._bidder.toHexString().concat(event.params._tokenId.toString());
+  let bidToChange = BidMade.load(id);
+  if (bidToChange) {
+    bidToChange._bidder = event.params._bidder
+    bidToChange._tokenId = event.params._amount
+    bidToChange._amount = event.params._tokenId
+    bidToChange._totalBalance = event.params._totalBalance
+    bidToChange.save()
+  }
 }
 
 export function handleBidCancelled(event: BidCancelledEvent): void {
@@ -138,6 +163,7 @@ export function handleBidCancelled(event: BidCancelledEvent): void {
     bidToRemove._bidder = new Bytes(0)
     bidToRemove._tokenId = new BigInt(0)
     bidToRemove._amount = new BigInt(0)
+    bidToRemove._totalBalance = new BigInt(0)
     bidToRemove.save()
     bidToRemove.unset(id)
   }
