@@ -850,6 +850,16 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver, ReentrancyGuard {
         // WETH = IERC20(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2); //Mainnet
     }
 
+    // getters
+
+    function getWordsNFTContractAddress() public view returns (address) {
+        return address(wordsNFT);
+    }
+
+    function getMarketplaceFeeWallet() public view returns (address payable) {
+        return marketplaceFeeWallet;
+    }
+
     // setters
 
     function setWordsNFTContractAddress(address _originContract) public onlyOwner {
@@ -875,16 +885,6 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver, ReentrancyGuard {
 
     function setMinimumBidIncreasePercentage(uint8 _percentage) external onlyOwner {
         minimumBidIncreasePercentage = _percentage;
-    }
-
-    // getters
-
-    function getWordsNFTContractAddress() public view returns (address) {
-        return address(wordsNFT);
-    }
-
-    function getMarketplaceFeeWallet() public view returns (address payable) {
-        return marketplaceFeeWallet;
     }
 
     // functions
@@ -1107,20 +1107,13 @@ contract WordsNFTMarketplace is Ownable, IERC721Receiver, ReentrancyGuard {
 
     // for testing only
 
-    // changes bid expiry time of a given NFT depending on the scenario given
-    // 1 -> expiry time will be 10 SECONDS from current time
-    // 2 -> expiry time will be 1 MINUTE from current time
-    // 3 -> expiry time will be 15 MINUTES from current time
-    function testChangeExpiryTime(uint256 _tokenId, uint8 _scenario) public {
-        require(1 <= _scenario && _scenario <= 3, "testChangeExpiryTime::Choose 1, 2 or 3 for _scenario. Read code comments for further details");
-        if (_scenario == 1) {
-            tokenIdForWordInfo[_tokenId].expiryTime = block.timestamp + 10 seconds;
-        }
-        else if (_scenario == 2) {
-            tokenIdForWordInfo[_tokenId].expiryTime = block.timestamp + 1 minutes;
-        }
-        else if (_scenario == 3) {
-            tokenIdForWordInfo[_tokenId].expiryTime = block.timestamp + 15 minutes;
-        }
+    // changes bid expiry time of a given NFT
+    function testChangeExpiryTime(uint256 _tokenId, uint256 _minutes) public {
+        tokenIdForWordInfo[_tokenId].expiryTime = block.timestamp + _minutes.mul(60);
+    }
+
+    // changes bid expiry time for all NFTs to be minted from this point onwards
+    function testChangeGlobalExpiryTime(uint256 _minutes) public {
+        bidExpiryTime = _minutes.mul(60);
     }
 }
