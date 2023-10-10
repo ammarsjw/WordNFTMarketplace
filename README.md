@@ -1,1 +1,1 @@
-# WordNFT Marketplace
+# Word NFT Marketplace
